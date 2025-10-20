@@ -1,0 +1,4 @@
+(lang dune 3.8)
+(profile br_timing)
+(cache enabled)
+(cache-storage-mode copy)

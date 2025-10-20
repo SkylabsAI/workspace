@@ -1,0 +1,20 @@
+ARG BASE_IMAGE=br:fm-default
+FROM $BASE_IMAGE
+
+# Copy a workspace including only the [fmdeps] part of [skylabs-fm].
+COPY docker/latest-fmdeps.tar.gz /home/coq/latest-fmdeps.tar.gz
+
+# Extract the workspace from the archive, deleting the archive.
+WORKDIR /home/coq
+RUN tar -xf latest-fmdeps.tar.gz
+RUN rm latest-fmdeps.tar.gz
+
+# Building and installing everything from the workspace root.
+WORKDIR /home/coq/latest-fmdeps
+RUN dune build --display=short @install
+RUN dune install
+WORKDIR /home/coq
+
+# Copying the metadata and removing the workspace files after install.
+RUN cp latest-fmdeps/fmdeps_commit_hashes.txt .
+RUN rm -rf latest-fmdeps
