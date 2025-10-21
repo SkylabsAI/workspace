@@ -1,0 +1,246 @@
+name: Main
+
+on: [workflow_call]
+
+env:
+  WORKDIR: "/tmp/build-dir"  # NOTE: Keep in sync with second occurrence at the bottom
+  SCRATCHDIR: "/tmp/scratch"
+  COMMITS_JOB: "commits_job.txt"
+  COMMITS_BASE: "commits_base.txt"
+  DUNE_TARGET: "@fmdeps/all @fmdeps/runtest @psi/all @psi/runtest @bluerock/bhv/proof @bluerock/NOVA/all @bluerock/nova-interface/all"
+  BOILERPLATE: "/home/coq/activate.inc.sh"
+  CLICOLOR: "1"
+  GNUMAKEFLAGS: "--no-print-directory"
+  OCAMLRUNPARAM: "a=2,o=120,s=256M"
+  DUNE_CACHE_STORAGE_MODE: "copy"
+  DUNE_CONFIG__BACKGROUND_DIGESTS: "disabled"
+  DUNE_PROFILE: "br_timing"
+  UV_LINK_MODE: "copy"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  gen-job:
+    runs-on:
+      group: FM
+    container:
+      image: "ghcr.io/skylabsai/workspace:fm-default"
+      options: "-v=/cache:/cache:ro -v=/home/coq/.ssh:/home/coq/.ssh -v=/home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
+      # Our docker registry has read access for actions triggered by FM repositories.
+      # Hence, GITHUB_TOKEN as the password is enough to log in to the registry. GH uses it by default.
+      # The username does not matter. GH picks the triggering user by default.
+      # credentials:
+      #   username: "<anything>"
+      #   password: ${{ secrets.GITHUB_TOKEN }} # TODO: use secrets.FM_CI_TOKEN for consistency?
+      env:
+        NJOBS: "16"
+        BASH_ENV: "/home/coq/.profile"
+    outputs:
+      compare: ${{ steps.config.outputs.compare }}
+    steps:
+      - uses: SkylabsAI/workspace/.github/actions/initialize_workspace@main
+        with:
+          FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
+      - id: config
+        uses: ./workspace_checkout/.github/actions/config
+        with:
+          FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
+
+  full-build:
+    needs: gen-job
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.WORKDIR }}
+    runs-on:
+      group: FM
+    container:
+      image: "ghcr.io/skylabsai/workspace:fm-default"
+      options: "-v=/cache:/cache:ro -v=/home/coq/.ssh:/home/coq/.ssh -v=/home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
+      # Our docker registry has read access for actions triggered by FM repositories.
+      # Hence, GITHUB_TOKEN as the password is enough to log in to the registry. GH uses it by default.
+      # The username does not matter. GH picks the triggering user by default.
+      # credentials:
+      #   username: "<anything>"
+      #   password: ${{ secrets.GITHUB_TOKEN }} # TODO: use secrets.FM_CI_TOKEN for consistency?
+      env:
+        NJOBS: "16"
+        BASH_ENV: "/home/coq/.profile"
+    steps:
+      - uses: SkylabsAI/workspace/.github/actions/initialize_workspace@main
+        with:
+          FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
+      - name: "Download Commit Files"
+        uses: actions/download-artifact@v5
+        with:
+          name: "commit-files"
+          path: ${{ env.SCRATCHDIR }}
+      - name: "Job Checkout and Cleanup"
+        run: |
+          make nuke CONFIRM=yes
+          git clean -ffxd
+          git reset --hard
+          rm -rf _build
+          ./dev/ci/checkout.sh ${{ env.SCRATCHDIR }}/${{ env.COMMITS_JOB }}
+          make describe | sort | tee desc.txt
+          diff <(sort ${{ env.SCRATCHDIR }}/${{ env.COMMITS_JOB }}) desc.txt
+      # - name: "Set stack limit for following steps"
+      #   run: |
+      #     echo "ulimit -S -s 32768" >> ~/.bashrc
+      - name: "Create Directory structure for dune"
+        run: |
+          mkdir -p ~/.cache/ ~/.config/dune/
+          cp fmdeps/fm-ci/ci/dune_config ~/.config/dune/config
+      - name: "Test stack limit"
+        run: |
+          ulimit -S -s
+      - id: build-job-asts
+        name: "Build Job ASTs"
+        continue-on-error: true
+        run: |
+          source ${{ env.BOILERPLATE }}
+          make -s stage1
+      - id: build-job
+        continue-on-error: true
+        name: "Build Job Proofs"
+        run: |
+          source ${{ env.BOILERPLATE }}
+          # Actual build.
+          dune build _build/install/default/bin/filter-dune-output
+          dune build -j${NJOBS} ${{ env.DUNE_TARGETS }} 2>&1 | _build/install/default/bin/filter-dune-output
+      - name: "Extract Job Data"
+        run: |
+          source ${{ env.BOILERPLATE }}
+          # Print information on the size of the _build directory.
+          du -hs _build
+          du -hc $(find _build -type f -name "*.v") | tail -n 1
+          du -hc $(find _build -type f -name "*.vo") | tail -n 1
+          du -hc $(find _build -type f -name "*.glob") | tail -n 1
+          # Extract data.
+          find _build/ -name '*.vo'| sort | xargs md5sum > ${{ env.SCRATCHDIR }}/md5sums.txt
+          dune exec -- globfs.extract-all ${NJOBS} _build/default
+          # echo -e "\e[0Ksection_start:`date +%s`:section_9[collapsed=true]\r\e[0KGenerate code quality report"
+          (cd _build/default; dune exec -- coqc-perf.report .) | tee -a coq_codeq.log
+          cat coq_codeq.log | dune exec -- coqc-perf.code-quality-report > ${{ env.SCRATCHDIR }}/gl-code-quality-report.json || true
+          # echo -e "\e[0Ksection_end:`date +%s`:section_9\r\e[0K"
+          dune exec -- coqc-perf.extract-all _build/default perf-data
+          dune exec -- hint-data.extract-all ${NJOBS} perf-data
+          du -hs _build
+          du -hs perf-data
+          mv perf-data ${{ env.SCRATCHDIR }}/perf-data
+          rsync -a --prune-empty-dirs --include="*/" --include="*.d" --exclude="*" _build/ ${{ env.SCRATCHDIR }}/build_vd
+
+      - name: "Skip Base Build?"
+        if: needs.gen-job.outputs.compare != '1'
+        run: |
+          echo "Skipping Base Build because of pipeline flags" # TODO: mention actual flag name
+
+      - name: "Checkout Base Commits"
+        if: needs.gen-job.outputs.compare == '1'
+        run: |
+          make nuke CONFIRM=yes
+          git clean -ffxd
+          git reset --hard
+          rm -rf _build
+          ./dev/ci/checkout.sh ${{ env.SCRATCHDIR }}/${{ env.COMMITS_BASE }}
+          make describe | sort | tee desc.txt
+          diff <(sort ${{ env.SCRATCHDIR }}/${{ env.COMMITS_BASE }}) desc.txt
+      - name: "Build Base ASTs"
+        if: needs.gen-job.outputs.compare == '1'
+        run: |
+          source ${{ env.BOILERPLATE }}
+          make -s stage1
+      - name: "Build Base Commits"
+        if: needs.gen-job.outputs.compare == '1'
+        run: |
+          source ${{ env.BOILERPLATE }}
+          # Actual build.
+          dune build _build/install/default/bin/filter-dune-output
+          (dune build -j${NJOBS} ${{ env.DUNE_TARGETS }}  2>&1 | _build/install/default/bin/filter-dune-output)
+      - name: "Extract Base Data"
+        run: |
+          source ${{ env.BOILERPLATE }}
+          # Print information on the size of the _build directory.
+          du -hs _build
+          du -hc $(find _build -type f -name "*.v") | tail -n 1
+          du -hc $(find _build -type f -name "*.vo") | tail -n 1
+          du -hc $(find _build -type f -name "*.glob") | tail -n 1
+          # Extract data.
+          find _build/ -name '*.vo'| sort | xargs md5sum > ${{ env.SCRATCHDIR }}/md5sums_ref.txt
+          dune exec -- globfs.extract-all ${NJOBS} _build/default
+          dune exec -- coqc-perf.extract-all _build/default perf-data
+          dune exec -- hint-data.extract-all ${NJOBS} perf-data
+          du -hs _build
+          du -hs perf-data
+          mv perf-data ${{ env.SCRATCHDIR }}/perf-data_ref
+
+      #### PERF ANALYSIS ####
+      - name: "Checkout Job Commits (again)"
+        if: needs.gen-job.outputs.compare == '1'
+        run: |
+          make nuke CONFIRM=yes
+          git clean -ffxd
+          git reset --hard
+          ./dev/ci/checkout.sh ${{ env.SCRATCHDIR }}/${{ env.COMMITS_JOB }}
+          make describe | sort | tee desc.txt
+          diff <(sort ${{ env.SCRATCHDIR }}/${{ env.COMMITS_JOB }}) desc.txt
+      - name: "Performance Analysis"
+        if: needs.gen-job.outputs.compare == '1'
+        run: |
+          source ${{ env.BOILERPLATE }}
+          dune build fmdeps/BRiCk/rocq-tools
+          mv ${{ env.SCRATCHDIR }}/perf-data perf-data
+          mv ${{ env.SCRATCHDIR }}/perf-data_ref perf-data_ref
+          cp perf-data/perf_summary.csv ${{ env.SCRATCHDIR }}/perf_summary.csv
+          cp perf-data_ref/perf_summary.csv ${{ env.SCRATCHDIR }}/perf_summary_ref.csv
+          dune exec -- coqc-perf.summary-diff --assume-missing-unchanged --no-colors --instr-threshold 1 perf-data_ref/perf_summary.csv perf-data/perf_summary.csv > ${{ env.SCRATCHDIR }}/perf_analysis.md
+          dune exec -- coqc-perf.summary-diff --assume-missing-unchanged --no-colors --instr-threshold 1 --csv perf-data_ref/perf_summary.csv perf-data/perf_summary.csv > ${{ env.SCRATCHDIR }}/perf_analysis.csv
+          dune exec -- coqc-perf.summary-diff --assume-missing-unchanged --no-colors --instr-threshold 1 --gitlab --diff-base-url "https://skylabs_ai.gitlab.io/-/FM/fm-ci/-/jobs/${CI_JOB_ID}/artifacts/perf-report" perf-data_ref/perf_summary.csv perf-data/perf_summary.csv > ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md
+          dune exec -- coqc-perf.summary-diff --assume-missing-unchanged --instr-threshold 1 --gitlab perf-data_ref/perf_summary.csv perf-data/perf_summary.csv | tee >> $GITHUB_STEP_SUMMARY
+          dune exec -- coqc-perf.html-diff-all perf-data_ref perf-data ${{ env.SCRATCHDIR }}/perf-report
+          # Adding hint data diff
+          find perf-data_ref -type f -name "*.hints.csv" | dune exec -- coqc-perf.gather-hint-data > ${{ env.SCRATCHDIR }}/hint-data_ref.csv
+          find perf-data -type f -name "*.hints.csv" | dune exec -- coqc-perf.gather-hint-data > ${{ env.SCRATCHDIR }}/hint-data.csv
+          dune exec -- coqc-perf.hint-data-diff ${{ env.SCRATCHDIR }}/hint-data_ref.csv ${{ env.SCRATCHDIR }}/hint-data.csv > hint_data_diff.md
+          dune exec -- coqc-perf.hint-data-diff --html ${{ env.SCRATCHDIR }}/hint-data_ref.csv ${{ env.SCRATCHDIR }}/hint-data.csv > ${{ env.SCRATCHDIR }}/hint_data_diff.html
+          head -n 202 hint_data_diff.md > hint_data_diff_truncated.md
+          echo -e "\n<details><summary>[Hint data diff](https://skylabs_ai.gitlab.io/-/FM/fm-ci/-/jobs/${CI_JOB_ID}/artifacts/hint_data_diff.html)</summary>\n" >> ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md
+          cat hint_data_diff_truncated.md >> ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md
+          if ! cmp -s hint_data_diff.md hint_data_diff_truncated.md; then
+            echo "| ... | ... | ... | ... |" >> ${{ env.SCRATCHDIR }}/perf_analysis.gitlab.md
+          fi
+          echo -e '\n</details>\n' >> ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md
+          # python3 support/fm-perf/post_fm_perf.py --access-token ${PROOF_PERF_TOKEN} --project-id 74911021 --mr-id 3913 -f ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md --pipe-url "https://gitlab.com/skylabs_ai/FM/auto/-/pipelines/2116778517"
+
+      - name: "Main Build Failure?"
+        if: steps.build-job-asts.outcome != 'success' || steps.build-job.outcome != 'success'
+        run: |
+          echo "## Main build failed" | tee >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo " - ASTs:   ${{ steps.build-job-asts.outcome }}" | tee >> $GITHUB_STEP_SUMMARY
+          echo " - Proofs: ${{ steps.build-job.outcome }}"  | tee >> $GITHUB_STEP_SUMMARY
+          exit 1
+      - name: "Upload Artifacts"
+        uses: actions/upload-artifact@v4
+        with:
+          name: "reports"
+          if-no-files-found: ignore
+          path: |
+            ${{ env.SCRATCHDIR }}/commits.txt
+            ${{ env.SCRATCHDIR }}/ast_md5sums.txt
+            ${{ env.SCRATCHDIR }}/md5sums.txt
+            ${{ env.SCRATCHDIR }}/fm-stats
+            ${{ env.SCRATCHDIR }}/hint-data.csv
+            ${{ env.SCRATCHDIR }}/perf_summary.csv
+            ${{ env.SCRATCHDIR }}/commits_ref.txt
+            ${{ env.SCRATCHDIR }}/ast_md5sums_ref.txt
+            ${{ env.SCRATCHDIR }}/md5sums_ref.txt
+            ${{ env.SCRATCHDIR }}/perf-report
+            ${{ env.SCRATCHDIR }}/perf_analysis.md
+            ${{ env.SCRATCHDIR }}/perf_analysis.csv
+            ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md
+            ${{ env.SCRATCHDIR }}/hint_data_diff.html
+            ${{ env.SCRATCHDIR }}/hint-data_ref.csv
+            ${{ env.SCRATCHDIR }}/perf_summary_ref.csv

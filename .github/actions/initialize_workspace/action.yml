@@ -1,0 +1,48 @@
+name: "Initialize Workspace Directory"
+description: "Makes an initial clone of SkylabsAI/workspace in ./workspace_checkout and also copies it to env.WORKDIR. Also creates env.SCRATCHDIR"
+
+inputs:
+  FM_CI_TOKEN:
+    required: true
+    description: "secrets.FM_CI_TOKEN"
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Cleanup previous runs"
+      shell: sh
+      run: |
+        rm -rf ${{ env.WORKDIR }} || true
+        rm -rf ${{ env.SCRATCHDIR }} || true
+    - name: "Checkout"
+      uses: actions/checkout@v5
+      with:
+        repository: 'SkylabsAI/workspace'
+        path: "workspace_checkout"
+        # We try to be a little smart in order to even get the initialization action at a useful commit
+        # Alternatively, we have non-uniform CI configs and let SkylabsAI/workspace run this file here directly without going through the initialization action
+        ref: ${{ github.repository == 'SkylabsAI/workspace' && github.sha || 'main' }}
+        token: ${{ inputs.FM_CI_TOKEN }}
+        fetch-depth: 0
+    - name: "Copy workspace Git Repo"
+      shell: sh
+      run: |
+        cp -aR workspace_checkout ${{ env.WORKDIR }}
+    - name: "Fix HOME"
+      shell: sh
+      run: |
+        echo "HOME=/home/coq" | sudo tee -a "$GITHUB_ENV"
+    - name: "Set GITHUB_URL"
+      shell: sh
+      run: |
+        echo GITHUB_URL="https://${{ github.actor }}:${{ inputs.FM_CI_TOKEN }}@github.com/" >> "$GITHUB_ENV"
+    - name: "Install sexpdata python package"
+      shell: sh
+      run: |
+        source /home/coq/.pyenv/bin/activate
+        pip install sexpdata==1.0.2
+    - name: "Create boilerplate.sh"
+      shell: sh
+      run: |
+        echo 'ulimit -S -s 32768; source ~/.pyenv/bin/activate; eval $(opam env)' > ${{ env.BOILERPLATE }}
