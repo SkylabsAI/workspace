@@ -1,8 +1,8 @@
 include fmdeps/config.mk
 
 define subrepo_targets
-REPO_NAME = $$(basename $$(word 1,$$(subst :, ,$$1)))
-REPO_URL = ${GITHUB_URL}/$$(word 1,$$(subst :, ,$$1)).git
+REPO_NAME = $$(word 1,$$(subst :, ,$$1))
+REPO_URL = ${GITHUB_URL}$$(word 1,$$(subst :, ,$$1)).git
 REPO_BRANCH = $$(word 2,$$(subst :, ,$$1))
 REPO_DIR = fmdeps/$$(word 3,$$(subst :, ,$$1))
 ifneq ($1,sentinel)
@@ -95,7 +95,7 @@ endif
 ifneq ($(LOOP_COMMAND),)
 FMDEPS_LOOP_TARGETS += fmdeps-${REPO_NAME}-loop
 .PHONY: fmdeps-${REPO_NAME}-loop
-fmdeps-${REPO_NAME}-loop: | loop_skylabs_fm
+fmdeps-${REPO_NAME}-loop: | loop_workspace
 ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
 	@echo "Looping on ${REPO_NAME} with \"${LOOP_COMMAND}\""
 	$(Q)$(LOOP_COMMAND) $(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)
