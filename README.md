@@ -1,73 +1,72 @@
 SkyLabs AI Workspace
 ====================
 
-Quick Install
--------------
+This repository provides infrastructure for cloning and working on the various
+SkyLabs AI repositories, within a single workspace. For now, only the FM repos
+are included, but the aim is to incorporate all active repositories.
 
-Run the following commands:
+This repository also hosts infrastructure for CI and docker images.
+
+Getting Started
+---------------
+
+This section gives detailed instructions for setting up a local workspace. The
+instructions assume that the workspace is cloned in a directory that will hold
+potentially many copies of the workspace, in the form of `git` work-trees.
+
+### Setting Up The Workspace
+
+First, you need to clone the workspace repository.
 ```sh
-make dev-check-ver                      # Check system deps.
-opam switch create --empty skylabs-fm   # Create a new opam switch.
-eval $(opam env ...)                    # As suggested by previous command (to adapt).
-make fmdeps-clone -j8                   # Clones all the BlueRock FM dependencies.
-make update-br-fm-deps                  # Install necessary dependencies.
-make stage1                             # Prepare for a minimal build.
-dune build @install                     # Build for installation.
-dune install                            # Install everything in the switch.
+mkdir -p $HOME/dev && cd $HOME/dev                # Pick a suitable directory.
+git clone git@github.com:SkylabsAI/workspace.git  # Clone the workspace.
+cd workspace                                      # Move to the workspace.
 ```
 
-Quick Development Setup
------------------------
+### Cloning Sub-Repositories
 
-Run the following commands:
+You can then optionally clone sub-repositories within it.
 ```sh
-make dev-setup           # Check system deps, setup environment.
-source dev/activate.sh   # Setup your shell, need to be run in all shells.
-make fmdeps-clone -j8    # Clones all the BlueRock FM dependencies.
-make update-br-fm-deps   # Installs necessary dependencies.
-make                     # Builds everything.
+make fmdeps-clone -j    # Clonning FM sub-repos.
+make bluerock-clone -j  # Clonning BlueRock sub-repos, mostly for CI.
 ```
 
-System Dependencies
--------------------
+### Setting Up FM Dependencies
 
-To build and install the FM toolchain, you need to install:
-- The [OCaml Package Manager (OPAM)](https://opam.ocaml.org/doc/Install.html)
-  version 2.2.1 at least.
-- Version 19 of the Clang compiler and LLVM toolchain (version 18 and 20 are
-  also supported).
-
-To check that you have everything correctly installed, you can run:
 ```sh
-make dev-check-ver
+make dev-check-ver      # Check system deps.
+make dev-setup-opam     # Sets up a suitable opam switch.
+make update-br-fm-deps  # Install necessary dependencies.
 ```
-Ensure that this command succeeds before continuing.
 
-Development Environment Setup
------------------------------
-
-To setup your development environment, you can run:
+Note that you might need to run either of the following commands to enable the
+correct opam switch locally.
+```sh
+source dev/activate.sh  # Enable the development environment.
+eval $(opam env)        # Subsumed by the above, adapt if necessary.
 ```
-make dev-setup
+
+### Building
+
+To start building, you can run the following.
+```sh
+make stage1             # Prepare for a minimal build.
+dune build              # Build for installation.
 ```
-This will create a local opam switch, as well as a Python virtual environment.
 
-To set up your shell, you need to run:
-```
-source dev/activate.sh
-```
-This will ensure that the OCaml and Python environments are accessible.
+Sub-Repository Control
+----------------------
 
-BlueRock FM Dependencies
-------------------------
+The following folders gather sub-repositories:
+- `fmdeps` (all the core FM repositories),
+- `bluerock` (all the BlueRock repositories used by FM CI).
 
-The `fmdeps` folder gathers sub-repositories corresponding to all the BlueRock
-FM dependencies (including BRiCk, the proof automation, Coq, ...).
+These directories contain a file called `config.mk`, which defines set set of
+repositories to be cloned. Special `Makefile` targets can be used to run batch
+operations on all such repositories. Note that different targets are used for
+different directories, and they are all prefixed by the directory name.
 
-To quickly get started, run `make fmdeps-clone -j8`. This will clone all the
-necessary BlueRock repositories under the `fmdeps` folder.
-
-Generally, the `fmdeps` sub-repositories are managed using `Makefile` targets:
+Available `Makefile` targets for the `fmdeps` directory are:
 - `make fmdeps-show-config` shows the configuration for the sub-repositories.
 - `make fmdeps-clone` initializes all the sub-repositories.
 - `make fmdeps-fetch` runs `git fetch --all` in all the sub-repositories.
@@ -79,13 +78,4 @@ There are more, but these can be dangerous:
 - `make fmdeps-gitclean` runs `git clean -xfd` in all the sub-repositories.
 - `make fmdeps-checkout-main` resets all the repositories to our main branch.
 
-Docker Image
-------------
-
-Note that the docker generation uses the current state of the repository, so
-it is your responsibility to make sure that your workspace is in a clean state
-before building the docker image.
-
-The following `Makefile` targets are provided for the Docker image setup:
-- `make docker-build` builds our docker image.
-- `make docker-run` runs our docker image.
+Similar targets are available for other sub-repository directories.
