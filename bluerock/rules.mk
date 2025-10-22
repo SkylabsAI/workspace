@@ -98,7 +98,6 @@ BLUEROCK_LOOP_TARGETS += bluerock-${REPO_NAME}-loop
 .PHONY: bluerock-${REPO_NAME}-loop
 bluerock-${REPO_NAME}-loop: | loop_workspace
 ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
-	@echo "Looping on ${REPO_NAME} with \"${LOOP_COMMAND}\""
 	$(Q)$(LOOP_COMMAND) $(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)
 endif
 
@@ -106,7 +105,6 @@ BLUEROCK_REVLOOP_TARGETS += bluerock-${REPO_NAME}-revloop
 .PHONY: bluerock-${REPO_NAME}-revloop
 bluerock-${REPO_NAME}-revloop:
 ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
-	@echo "Looping on ${REPO_NAME} with \"${LOOP_COMMAND}\""
 	$(Q)$(LOOP_COMMAND) $(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)
 endif
 endif

@@ -97,7 +97,6 @@ FMDEPS_LOOP_TARGETS += fmdeps-${REPO_NAME}-loop
 .PHONY: fmdeps-${REPO_NAME}-loop
 fmdeps-${REPO_NAME}-loop: | loop_workspace
 ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
-	@echo "Looping on ${REPO_NAME} with \"${LOOP_COMMAND}\""
 	$(Q)$(LOOP_COMMAND) $(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)
 endif
 
@@ -105,7 +104,6 @@ FMDEPS_REVLOOP_TARGETS += fmdeps-${REPO_NAME}-revloop
 .PHONY: fmdeps-${REPO_NAME}-revloop
 fmdeps-${REPO_NAME}-revloop:
 ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
-	@echo "Looping on ${REPO_NAME} with \"${LOOP_COMMAND}\""
 	$(Q)$(LOOP_COMMAND) $(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)
 endif
 endif
