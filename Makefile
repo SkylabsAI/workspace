@@ -9,7 +9,7 @@ SHELL := $(shell which bash)
 
 .PHONY: all
 all: _CoqProject stage1
-	@dune build --display=short
+	$(Q)dune build --display=short
 
 .PHONY: stage1
 stage1: ast-prepare-bluerock
