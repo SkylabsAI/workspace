@@ -15,7 +15,7 @@ endif
 		pip install -r ${BHV_DIR}/python_requirements.txt
 	@echo "[AST] ${BHV_DIR}"
 	$(Q)env \
-		GITLAB_URL="git@gitlab.com:skylabs_ai/FM/bluerock/" \
+		GITLAB_URL="${GITHUB_URL}SkylabsAI/bluerock." \
 		VIRTUAL_ENV="$${PWD}/${BHV_PYENV}" \
 		PATH="$${PWD}/${BHV_PYENV}/bin:$${PATH}" \
 		${BHV_DIR}/fm-build.py -b
