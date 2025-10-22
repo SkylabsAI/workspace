@@ -81,3 +81,6 @@ peek: fmdeps-peek bluerock-peek
 clean:
 	$(Q)rm -rf $(GENERATED_FILES)
 	$(Q)dune clean
+
+_CoqProject:
+	./fmdeps/BRiCk/scripts/coq_project_gen/gen-_CoqProject-dune.sh > _CoqProject
