@@ -15,23 +15,6 @@ all: _CoqProject stage1
 stage1: ast-prepare-bluerock
 	$(Q)dune build --display=short _build/install/default/bin/rocq
 
-# Include the rules for development tools (deps checking, ...)
-include dev/rules.mk
-
-# Include the rules for managing the fmdeps sub-repositories.
-include fmdeps/rules.mk
-
-.PHONY: describe
-describe: fmdeps-describe bluerock-describe
-	@git log --pretty=tformat:'./: %H' -n 1
-	@git diff HEAD --quiet || echo "./ is dirty"
-
-# Include the rules for building docker images.
-include docker/rules.mk
-
-# Include the rules for the BlueRock repos (used for CI).
-include bluerock/rules.mk
-
 # Updating the OCaml / Coq FM dependencies.
 update-br-fm-deps:
 	$(Q)opam update
@@ -39,9 +22,35 @@ update-br-fm-deps:
 	  git+https://github.com/ocaml/opam-repository-archive
 	$(Q)opam install fmdeps/fm-ci/fm-deps/br-fm-deps.opam
 
-# Initialization of the repository.
-.PHONY: init
-init: fmdeps-clone
+# Include the rules for development tools (deps checking, ...)
+include dev/rules.mk
+
+# Include the rules for building docker images.
+include docker/rules.mk
+
+# Include the rules for managing the fmdeps sub-repositories.
+include fmdeps/rules.mk
+
+# Include the rules for managing the psi sub-repositories.
+include psi/rules.mk
+
+# Include the rules for the BlueRock repos (used for CI).
+include bluerock/rules.mk
+
+.PHONY: describe
+describe: fmdeps-describe psi-describe bluerock-describe
+	@git log --pretty=tformat:'./: %H' -n 1
+	@git diff HEAD --quiet || echo "./ is dirty"
+
+# Generating common targets for the various sub-repository directories.
+SUBREPO_DIRS = fmdeps psi bluerock
+define common_target
+.PHONY: $1
+$1: $(patsubst %,%-$1,${SUBREPO_DIRS})
+endef
+
+COMMON_TARGETS = clone lightweight-clone nuke peek
+$(foreach t,$(COMMON_TARGETS),$(eval $(call common_target,$(t))))
 
 # Support for looping over cloned repositories (excluding bhv sub-repos).
 # The LOOP_COMMAND variable must be set for these targets, and the passed
@@ -58,24 +67,12 @@ loop_workspace:
 	$(Q)$(LOOP_COMMAND) SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./
 
 .PHONY: loop
-loop: loop_workspace fmdeps-loop bluerock-loop
+loop: loop_workspace $(patsubst %,%-loop,${SUBREPO_DIRS})
 
 .PHONY: revloop
-revloop: fmdeps-revloop bluerock-revloop
+revloop: $(patsubst %,%-revloop,${SUBREPO_DIRS})
 	$(Q)$(LOOP_COMMAND) SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./
 endif
-
-.PHONY: clone
-clone: fmdeps-clone bluerock-clone
-
-.PHONY: lightweight-clone
-lightweight-clone: fmdeps-lightweight-clone bluerock-lightweight-clone
-
-.PHONY: nuke
-nuke: fmdeps-nuke bluerock-nuke
-
-.PHONY: peek
-peek: fmdeps-peek bluerock-peek
 
 .PHONY: clean
 clean:
