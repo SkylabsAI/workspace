@@ -55,14 +55,14 @@ WORKSPACE_ON_GITHUB = git@github.com:SkylabsAI/workspace.git
 
 .PHONY: loop_workspace
 loop_workspace:
-	$(Q)$(LOOP_COMMAND) FM/skylabs-fm ${WORKSPACE_ON_GITHUB} main ./
+	$(Q)$(LOOP_COMMAND) SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./
 
 .PHONY: loop
 loop: loop_workspace fmdeps-loop bluerock-loop
 
 .PHONY: revloop
 revloop: fmdeps-revloop bluerock-revloop
-	$(Q)$(LOOP_COMMAND) FM/skylabs-fm ${WORKSPACE_ON_GITHUB} main ./
+	$(Q)$(LOOP_COMMAND) SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./
 endif
 
 .PHONY: clean
