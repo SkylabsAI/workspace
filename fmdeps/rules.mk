@@ -22,6 +22,27 @@ else
 	$(Q)git clone --branch ${REPO_BRANCH} ${REPO_URL} ${REPO_DIR}
 endif
 
+FMDEPS_LIGHTWEIGHT_CLONE_TARGETS += fmdeps-${REPO_NAME}-lightweight-clone
+.PHONY: fmdeps-${REPO_NAME}-lightweight-clone
+fmdeps-${REPO_NAME}-lightweight-clone:
+ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
+	@echo "Repo ${REPO_URL} seems already cloned in ${REPO_DIR}."
+else
+	@echo "Cloning ${REPO_URL} in ${REPO_DIR} (lightweight, no checkout)"
+	$(Q)git clone --no-checkout --filter=tree:0 --quiet ${REPO_URL} ${REPO_DIR}
+endif
+
+FMDEPS_NUKE_TARGETS += fmdeps-${REPO_NAME}-nuke
+.PHONY: fmdeps-${REPO_NAME}-nuke
+fmdeps-${REPO_NAME}-nuke:
+ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
+ifeq ($(CONFIRM),yes)
+	@rm -rf ${REPO_DIR}
+else
+	@echo "Use CONFIRM=yes to really nuke ${REPO_NAME}."
+endif
+endif
+
 FMDEPS_FETCH_TARGETS += fmdeps-${REPO_NAME}-fetch
 .PHONY: fmdeps-${REPO_NAME}-fetch
 fmdeps-${REPO_NAME}-fetch:
@@ -122,6 +143,12 @@ fmdeps-show-config: $(FMDEPS_SHOW_CONFIG_TARGETS)
 
 .PHONY: fmdeps-clone
 fmdeps-clone: $(FMDEPS_CLONE_TARGETS)
+
+.PHONY: fmdeps-lightweight-clone
+fmdeps-lightweight-clone: $(FMDEPS_LIGHTWEIGHT_CLONE_TARGETS)
+
+.PHONY: fmdeps-nuke
+fmdeps-nuke: ${FMDEPS_NUKE_TARGETS}
 
 .PHONY: fmdeps-fetch
 fmdeps-fetch: $(FMDEPS_FETCH_TARGETS)

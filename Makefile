@@ -65,6 +65,18 @@ revloop: fmdeps-revloop bluerock-revloop
 	$(Q)$(LOOP_COMMAND) SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./
 endif
 
+.PHONY: clone
+clone: fmdeps-clone bluerock-clone
+
+.PHONY: lightweight-clone
+lightweight-clone: fmdeps-lightweight-clone bluerock-lightweight-clone
+
+.PHONY: nuke
+nuke: fmdeps-nuke bluerock-nuke
+
+.PHONY: peek
+peek: fmdeps-peek bluerock-peek
+
 .PHONY: clean
 clean:
 	$(Q)rm -rf $(GENERATED_FILES)

@@ -23,6 +23,27 @@ else
 	$(Q)git clone --branch ${REPO_BRANCH} ${REPO_URL} ${REPO_DIR}
 endif
 
+BLUEROCK_LIGHTWEIGHT_CLONE_TARGETS += bluerock-${REPO_NAME}-lightweight-clone
+.PHONY: bluerock-${REPO_NAME}-lightweight-clone
+bluerock-${REPO_NAME}-lightweight-clone:
+ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
+	@echo "Repo ${REPO_URL} seems already cloned in ${REPO_DIR}."
+else
+	@echo "Cloning ${REPO_URL} in ${REPO_DIR} (lightweight, no checkout)"
+	$(Q)git clone --no-checkout --filter=tree:0 --quiet ${REPO_URL} ${REPO_DIR}
+endif
+
+BLUEROCK_NUKE_TARGETS += bluerock-${REPO_NAME}-nuke
+.PHONY: bluerock-${REPO_NAME}-nuke
+bluerock-${REPO_NAME}-nuke:
+ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
+ifeq ($(CONFIRM),yes)
+	@rm -rf ${REPO_DIR}
+else
+	@echo "Use CONFIRM=yes to really nuke ${REPO_NAME}."
+endif
+endif
+
 BLUEROCK_FETCH_TARGETS += bluerock-${REPO_NAME}-fetch
 .PHONY: bluerock-${REPO_NAME}-fetch
 bluerock-${REPO_NAME}-fetch:
@@ -123,6 +144,12 @@ bluerock-show-config: $(BLUEROCK_SHOW_CONFIG_TARGETS)
 
 .PHONY: bluerock-clone
 bluerock-clone: $(BLUEROCK_CLONE_TARGETS)
+
+.PHONY: bluerock-lightweight-clone
+bluerock-lightweight-clone: $(BLUEROCK_LIGHTWEIGHT_CLONE_TARGETS)
+
+.PHONY: bluerock-nuke
+bluerock-nuke: ${BLUEROCK_NUKE_TARGETS}
 
 .PHONY: bluerock-fetch
 bluerock-fetch: $(BLUEROCK_FETCH_TARGETS)
