@@ -11,9 +11,13 @@ SHELL := $(shell which bash)
 all: _CoqProject stage1
 	$(Q)dune build --display=short
 
+.PHONY: ide-prepare
+ide-prepare:
+	$(Q)dune build --display=short @fmdeps/vendored/rocq/install
+
 .PHONY: stage1
 stage1: ast-prepare-bluerock
-	$(Q)dune build --display=short _build/install/default/bin/rocq
+	$(MAKE) ide-prepare
 
 # Updating the OCaml / Coq FM dependencies.
 update-br-fm-deps:

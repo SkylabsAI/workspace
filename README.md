@@ -50,7 +50,8 @@ eval $(opam env)        # Subsumed by the above, adapt if necessary.
 
 To start building, you can run the following.
 ```sh
-make stage1             # Prepare for a minimal build.
+make ide-prepare        # Prepare for a minimal build.
+make stage1             # Build ASTs of client projects.
 dune build              # Build for installation.
 ```
 
