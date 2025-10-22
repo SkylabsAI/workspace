@@ -26,9 +26,9 @@ cd workspace                                      # Move to the workspace.
 
 You can then optionally clone sub-repositories within it.
 ```sh
-make fmdeps-clone -j    # Clonning FM sub-repos.
-make psi-clone -j       # Clonning psi sub-repos.
-make bluerock-clone -j  # Clonning BlueRock sub-repos, mostly for CI.
+make fmdeps-clone -j    # Cloning FM sub-repos.
+make psi-clone -j       # Cloning psi sub-repos.
+make bluerock-clone -j  # Cloning BlueRock sub-repos, mostly for CI.
 ```
 
 ### Setting Up FM Dependencies
