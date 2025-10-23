@@ -68,15 +68,18 @@ $(foreach t,$(COMMON_TARGETS),$(eval $(call common_target,$(t))))
 ifneq ($(LOOP_COMMAND),)
 WORKSPACE_ON_GITHUB = ${GITHUB_URL}SkylabsAI/workspace.git
 
-.PHONY: loop_workspace
-loop_workspace:
+.PHONY: loop-workspace
+loop-workspace:
 	$(Q)$(LOOP_COMMAND) SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./
 
+.PHONY: loop-subrepos
+loop-subrepos: $(patsubst %,%-revloop,${SUBREPO_DIRS})
+
 .PHONY: loop
-loop: loop_workspace $(patsubst %,%-loop,${SUBREPO_DIRS})
+loop: loop-workspace $(patsubst %,%-loop,${SUBREPO_DIRS})
 
 .PHONY: revloop
-revloop: $(patsubst %,%-revloop,${SUBREPO_DIRS})
+revloop: loop-subrepos
 	$(Q)$(LOOP_COMMAND) SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./
 endif
 

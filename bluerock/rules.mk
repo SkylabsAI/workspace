@@ -20,7 +20,7 @@ ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
 	@echo "Repo ${REPO_URL} seems already cloned in ${REPO_DIR}."
 else
 	@echo "Cloning ${REPO_URL} in ${REPO_DIR}"
-	$(Q)git clone --branch ${REPO_BRANCH} ${REPO_URL} ${REPO_DIR}
+	$(Q)git clone ${CLONE_ARGS} --branch ${REPO_BRANCH} ${REPO_URL} ${REPO_DIR}
 endif
 
 BLUEROCK_LIGHTWEIGHT_CLONE_TARGETS += bluerock-${REPO_NAME}-lightweight-clone
@@ -117,7 +117,7 @@ endif
 ifneq ($(LOOP_COMMAND),)
 BLUEROCK_LOOP_TARGETS += bluerock-${REPO_NAME}-loop
 .PHONY: bluerock-${REPO_NAME}-loop
-bluerock-${REPO_NAME}-loop: | loop_workspace
+bluerock-${REPO_NAME}-loop: | loop-workspace
 ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
 	$(Q)$(LOOP_COMMAND) $(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)
 endif
