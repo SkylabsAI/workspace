@@ -66,7 +66,7 @@ $(foreach t,$(COMMON_TARGETS),$(eval $(call common_target,$(t))))
 # 3) The name of our main branch for that repository.
 # 4) The relative path to the repository from the root of the workspace.
 ifneq ($(LOOP_COMMAND),)
-WORKSPACE_ON_GITHUB = git@github.com:SkylabsAI/workspace.git
+WORKSPACE_ON_GITHUB = ${GITHUB_URL}SkylabsAI/workspace.git
 
 .PHONY: loop_workspace
 loop_workspace:
