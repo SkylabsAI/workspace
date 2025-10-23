@@ -55,7 +55,7 @@ define common_target
 $1: $(patsubst %,%-$1,${SUBREPO_DIRS})
 endef
 
-COMMON_TARGETS = clone lightweight-clone nuke peek
+COMMON_TARGETS = show-config clone lightweight-clone pull nuke peek
 $(foreach t,$(COMMON_TARGETS),$(eval $(call common_target,$(t))))
 
 # Support for looping over cloned repositories (excluding bhv sub-repos).
