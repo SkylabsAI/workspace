@@ -12,12 +12,14 @@ all: _CoqProject stage1
 	$(Q)dune build --display=short
 
 .PHONY: ide-prepare
-ide-prepare:
+ide-prepare: _CoqProject
 	$(Q)dune build --display=short @fmdeps/vendored/rocq/install
 
+_CoqProject: fmdeps/BRiCk/scripts/coq_project_gen/gen-_CoqProject-dune.sh
+	$(Q)$< > $@
+
 .PHONY: stage1
-stage1: ast-prepare-bluerock
-	$(MAKE) ide-prepare
+stage1: ide-prepare | ast-prepare-bluerock
 
 # Updating the OCaml / Coq FM dependencies.
 update-br-fm-deps:
@@ -82,6 +84,3 @@ endif
 clean:
 	$(Q)rm -rf $(GENERATED_FILES)
 	$(Q)dune clean
-
-_CoqProject:
-	./fmdeps/BRiCk/scripts/coq_project_gen/gen-_CoqProject-dune.sh > _CoqProject
