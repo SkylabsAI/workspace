@@ -1,24 +1,19 @@
 BHV_DIR = bluerock/bhv
-BHV_PYENV = ${BHV_DIR}/_pyenv
+GITLAB_URL="${GITHUB_URL}SkylabsAI/bluerock."
+BHV_VENV = ${BHV_DIR}/.venv
 
 .PHONY: ast-prepare-bhv
 ast-prepare-bhv:
 ifeq ($(wildcard ${BHV_DIR}),${BHV_DIR})
-ifneq ($(wildcard ${BHV_PYENV}),${BHV_PYENV})
-	@echo "[ENV] ${BHV_PYENV}"
-	$(Q)python3 -m venv ${BHV_PYENV}
+ifneq ($(wildcard ${BHV_VENV}),${BHV_VENV})
+	@echo "[ENV] ${BHV_VENV}"
+	$(Q)(cd ${BHV_DIR}; uv venv)
+	$(Q)ls ${BHV_VENV} > /dev/null
 endif
 	@echo "[PIP] ${BHV_DIR}/python_requirements.txt"
-	$(Q)env \
-		VIRTUAL_ENV="$${PWD}/${BHV_PYENV}" \
-		PATH="$${PWD}/${BHV_PYENV}/bin:$${PATH}" \
-		pip install -r ${BHV_DIR}/python_requirements.txt
+	$(Q)(cd ${BHV_DIR}; uv pip install -r python_requirements.txt)
 	@echo "[AST] ${BHV_DIR}"
-	$(Q)env \
-		GITLAB_URL="${GITHUB_URL}SkylabsAI/bluerock." \
-		VIRTUAL_ENV="$${PWD}/${BHV_PYENV}" \
-		PATH="$${PWD}/${BHV_PYENV}/bin:$${PATH}" \
-		${BHV_DIR}/fm-build.py -b
+	$(Q)(cd ${BHV_DIR}; GITLAB_URL=${GITLAB_URL} uv run -- ./fm-build.py -b)
 else
 	@echo "Skipping AST generation for ${BHV_DIR} (not cloned)."
 endif
