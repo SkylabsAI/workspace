@@ -4,6 +4,9 @@ Q=@
 # Base repository URL (without organization name).
 GITHUB_URL ?= git@github.com:
 
+# URL for the workspace repository (this repository).
+WORKSPACE_ON_GITHUB = ${GITHUB_URL}SkylabsAI/workspace.git
+
 # Pick default bash on MacOS, even if it's installed with Homebrew.
 SHELL := $(shell which bash)
 
@@ -55,8 +58,15 @@ define common_target
 $1: $(patsubst %,%-$1,${SUBREPO_DIRS})
 endef
 
-COMMON_TARGETS = show-config clone lightweight-clone pull nuke peek
+COMMON_TARGETS = clone lightweight-clone pull nuke peek
 $(foreach t,$(COMMON_TARGETS),$(eval $(call common_target,$(t))))
+
+.PHONY: workspace-show-config
+workspace-show-config:
+	@echo "SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./"
+
+.PHONY: show-config
+show-config: workspace-show-config $(patsubst %,%-show-config,${SUBREPO_DIRS})
 
 # Support for looping over cloned repositories (excluding bhv sub-repos).
 # The LOOP_COMMAND variable must be set for these targets, and the passed
@@ -66,8 +76,6 @@ $(foreach t,$(COMMON_TARGETS),$(eval $(call common_target,$(t))))
 # 3) The name of our main branch for that repository.
 # 4) The relative path to the repository from the root of the workspace.
 ifneq ($(LOOP_COMMAND),)
-WORKSPACE_ON_GITHUB = ${GITHUB_URL}SkylabsAI/workspace.git
-
 .PHONY: loop-workspace
 loop-workspace:
 	$(Q)$(LOOP_COMMAND) SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./

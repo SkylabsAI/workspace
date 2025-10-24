@@ -10,7 +10,7 @@ ifneq ($1,sentinel)
 FMDEPS_SHOW_CONFIG_TARGETS += fmdeps-${REPO_NAME}-show-config
 .PHONY: fmdeps-${REPO_NAME}-show-config
 fmdeps-${REPO_NAME}-show-config:
-	@echo "Repo ${REPO_URL}#${REPO_BRANCH} cloned in ${REPO_DIR}."
+	@echo "$(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)"
 
 FMDEPS_CLONE_TARGETS += fmdeps-${REPO_NAME}-clone
 .PHONY: fmdeps-${REPO_NAME}-clone

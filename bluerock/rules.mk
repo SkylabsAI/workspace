@@ -11,7 +11,7 @@ ifneq ($1,sentinel)
 BLUEROCK_SHOW_CONFIG_TARGETS += bluerock-${REPO_NAME}-show-config
 .PHONY: bluerock-${REPO_NAME}-show-config
 bluerock-${REPO_NAME}-show-config:
-	@echo "Repo ${REPO_URL}#${REPO_BRANCH} cloned in ${REPO_DIR}."
+	@echo "$(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)"
 
 BLUEROCK_CLONE_TARGETS += bluerock-${REPO_NAME}-clone
 .PHONY: bluerock-${REPO_NAME}-clone

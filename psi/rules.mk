@@ -10,7 +10,7 @@ ifneq ($1,sentinel)
 PSI_SHOW_CONFIG_TARGETS += psi-${REPO_NAME}-show-config
 .PHONY: psi-${REPO_NAME}-show-config
 psi-${REPO_NAME}-show-config:
-	@echo "Repo ${REPO_URL}#${REPO_BRANCH} cloned in ${REPO_DIR}."
+	@echo "$(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)"
 
 PSI_CLONE_TARGETS += psi-${REPO_NAME}-clone
 .PHONY: psi-${REPO_NAME}-clone
