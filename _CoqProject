@@ -289,3 +289,7 @@
 -Q fmdeps/vendored/rocq/theories/Corelib/ Corelib
 -Q _build/default/fmdeps/vendored/rocq/theories/Ltac2/ Ltac2
 -Q fmdeps/vendored/rocq/theories/Ltac2/ Ltac2
+-Q _build/default/psi/data/brick_groundtruth/examples/ brick_groundtruth.examples
+-Q psi/data/brick_groundtruth/examples/ brick_groundtruth.examples
+-Q _build/default/psi/data/brick_groundtruth/prelude/ brick_groundtruth.prelude
+-Q psi/data/brick_groundtruth/prelude/ brick_groundtruth.prelude
