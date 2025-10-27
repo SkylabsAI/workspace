@@ -29,6 +29,7 @@ ifeq ($(wildcard ${NOVA_DIR}),${NOVA_DIR})
 		PREFIX_NOVA=../../_build/default/bluerock/NOVA/build-proof \
 		PREFIX_FM=../../_build/default/fmdeps \
 		CPP2V=$${PWD}/_build/install/default/bin/cpp2v \
+		LLVM=1 BUILD_CACHING=0 BRASS_aarch64=off BRASS_x86_64=off SHALLOW=1 \
 		dune-ast
 else
 	@echo "Skipping AST generation for ${NOVA_DIR} (not cloned)."
