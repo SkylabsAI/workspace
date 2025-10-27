@@ -13,7 +13,8 @@ endif
 	@echo "[PIP] ${BHV_DIR}/python_requirements.txt"
 	$(Q)(cd ${BHV_DIR}; uv pip install -r python_requirements.txt)
 	@echo "[AST] ${BHV_DIR}"
-	$(Q)(cd ${BHV_DIR}; GITLAB_URL=${GITLAB_URL} uv run -- ./fm-build.py -b)
+	$(Q)(cd ${BHV_DIR}; LLVM=1 BUILD_CACHING=0 SHALLOW=1 \
+		GITLAB_URL=${GITLAB_URL} uv run -- ./fm-build.py -b)
 else
 	@echo "Skipping AST generation for ${BHV_DIR} (not cloned)."
 endif
@@ -29,7 +30,6 @@ ifeq ($(wildcard ${NOVA_DIR}),${NOVA_DIR})
 		PREFIX_NOVA=../../_build/default/bluerock/NOVA/build-proof \
 		PREFIX_FM=../../_build/default/fmdeps \
 		CPP2V=$${PWD}/_build/install/default/bin/cpp2v \
-		LLVM=1 BUILD_CACHING=0 BRASS_aarch64=off BRASS_x86_64=off SHALLOW=1 \
 		dune-ast
 else
 	@echo "Skipping AST generation for ${NOVA_DIR} (not cloned)."
