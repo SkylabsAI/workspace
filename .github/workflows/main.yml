@@ -216,7 +216,7 @@ jobs:
           dune exec -- coqc-perf.summary-diff --assume-missing-unchanged --no-colors --instr-threshold 1 perf-data_ref/perf_summary.csv perf-data/perf_summary.csv > ${{ env.SCRATCHDIR }}/perf_analysis.md
           dune exec -- coqc-perf.summary-diff --assume-missing-unchanged --no-colors --instr-threshold 1 --csv perf-data_ref/perf_summary.csv perf-data/perf_summary.csv > ${{ env.SCRATCHDIR }}/perf_analysis.csv
           dune exec -- coqc-perf.summary-diff --assume-missing-unchanged --no-colors --instr-threshold 1 --gitlab --diff-base-url "https://skylabs_ai.gitlab.io/-/FM/fm-ci/-/jobs/${CI_JOB_ID}/artifacts/perf-report" perf-data_ref/perf_summary.csv perf-data/perf_summary.csv > ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md
-          dune exec -- coqc-perf.summary-diff --assume-missing-unchanged --instr-threshold 1 --gitlab perf-data_ref/perf_summary.csv perf-data/perf_summary.csv | tee >> $GITHUB_STEP_SUMMARY
+          dune exec -- coqc-perf.summary-diff --assume-missing-unchanged --no-colors --instr-threshold 1 --github perf-data_ref/perf_summary.csv perf-data/perf_summary.csv | tee >> $GITHUB_STEP_SUMMARY
           dune exec -- coqc-perf.html-diff-all perf-data_ref perf-data ${{ env.SCRATCHDIR }}/perf-report
           # Adding hint data diff
           find perf-data_ref -type f -name "*.hints.csv" | dune exec -- coqc-perf.gather-hint-data > ${{ env.SCRATCHDIR }}/hint-data_ref.csv
