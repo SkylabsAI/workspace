@@ -18,8 +18,11 @@ all: _CoqProject stage1
 ide-prepare: _CoqProject
 	$(Q)dune build --display=short @fmdeps/vendored/rocq/install
 
-_CoqProject: fmdeps/BRiCk/scripts/coq_project_gen/gen-_CoqProject-dune.sh
-	$(Q)$< > $@
+.PHONY: FORCE
+FORCE:
+
+_CoqProject: fmdeps/BRiCk/scripts/coq_project_gen/gen-_CoqProject-dune.sh FORCE
+	$(Q)$< > $@ || { rm -f $@; exit 1; }
 
 .PHONY: stage1
 stage1: ide-prepare | ast-prepare-bluerock

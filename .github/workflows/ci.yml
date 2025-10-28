@@ -1,0 +1,12 @@
+name: main
+on:
+  push:
+    branches:
+      - "main" # Default branch of the repository (adapt if necessary).
+  pull_request:
+    types: [labeled,unlabeled,synchronize]
+
+jobs:
+  CI:
+    uses: SkylabsAI/workspace/.github/workflows/main.yml@main
+    secrets: inherit
