@@ -498,6 +498,9 @@ class Trigger:
         if trigger.labels == None:
             # We assume that we only have labels if a PR was given in the triggering event
             await trigger.backfill_labels()
+        if trigger.event_type == EventType.PUSH and trigger.branch == trigger.repo.default_branch:
+            # Disable comparison for pushes to default branches
+            trigger.labels.compare = False
         return trigger
 
     def is_trigger_repo(self, other_repo):
