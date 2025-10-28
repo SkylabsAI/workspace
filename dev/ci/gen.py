@@ -175,7 +175,7 @@ class Repos:
         # logger.debug(f"make loop out: {output}")
         output = output.decode('utf-8')
         return cls.of_loop_echo(output.splitlines())
-    def find_github_path(self, github_path):
+    def find_github_path(self, github_path, _default_branch: str):
         for repo in self.repos:
             if repo.github_path == github_path:
                 return repo
@@ -444,6 +444,7 @@ class ReposData:
 
     async def pr(self, repo : Repo, branch : str | None = None, initial_pr_number : int | None = None) -> PRData | None:
         data = self[repo]
+        print(branch, repo)
         if isinstance(data.pr, PRData):
             return data.pr
         elif branch != None and branch == repo.default_branch:
@@ -481,12 +482,14 @@ class Trigger:
     commit : str
     event_type : EventType
     labels : Labels | None
+    default_branch : str | None
     @classmethod
     async def of_args(cls, repo_by_path, args):
         args = {f : getattr(args,f"trigger_{f}") if hasattr(args,f"trigger_{f}") else None for f in cls.__dataclass_fields__.keys()}
         if "labels" not in args:
             args["labels"] = None # too hard to get via cmdline
-        repo = repo_by_path(args["repo"])
+        default_branch = args["default_branch"] if args["default_branch"] != None else "<stub>"
+        repo = repo_by_path(args["repo"], default_branch)
         args["repo"] = repo
         pr_given = args["pr"] != None
         pr = await DATA.pr(repo, branch=args["branch"], initial_pr_number=args["pr"])
@@ -537,7 +540,8 @@ def add_common_args(parser):
     parser.add_argument("--trigger-repo", help="The GitHub path of the repository triggering the current pipeline. Format: USER_OR_ORG/REPO_NAME", required=True, type=str)
     parser.add_argument("--trigger-event-type", help="The event type", required=True, type=EventType.of_type)
     parser.add_argument("--trigger-pr", help="The PR triggering this pipeline, if any. Considered missing if empty. Default: Retrieved via Github API.", required=False, type=non_empty_str)
-    parser.add_argument("--trigger-branch", help="The branch on which the pipeline was triggered", required=True, type=str)
+    parser.add_argument("--trigger-branch", help="The branch on which the pipeline was triggered.", required=True, type=str)
+    parser.add_argument("--trigger-default-branch", help="The default branch of the repository on which the pipeline was triggered.", required=True, type=non_empty_str)
     parser.add_argument("--trigger-commit", help="The commit that triggered this pipeline", required=True, type=str)
     parser.add_argument("--trigger-labels", help="Labels of the triggering PR. Default: Retrieved via Github API.", type=Labels.of_str)
     parser.add_argument("--github-token", type=(lambda x: GH.set_auth(x)), required=True)
@@ -579,7 +583,12 @@ async def make_checkout_workspace(parser, context, args):
     args = parser.parse_args(args)
     # the triggering repo might not exist in workspace/main
     # we produce a stub just to construct a full Trigger object
-    repo_by_path = lambda path: Workspace().repo if path == f"{GITHUB_ORGA}/{WORKSPACE_REPO}" else Repo(orga_path="<stub>", url=f"{GITHUB_SSH_URL_PREFIX}{path}.git", default_branch="<stub>", dir_path="<stub>")
+    def repo_by_path(path, default_branch: str = "<stub>"):
+        if path == f"{GITHUB_ORGA}/{WORKSPACE_REPO}":
+            # We are in the workspace so we can ask the workspace to give us info about the workspace
+            return Workspace().repo
+        else:
+            return Repo(orga_path="<stub>", url=f"{GITHUB_SSH_URL_PREFIX}{path}.git", default_branch=default_branch, dir_path="<stub>")
     trigger = await Trigger.of_args(repo_by_path, args)
     await checkout_workspace_job(trigger)
 
