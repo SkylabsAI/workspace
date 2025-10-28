@@ -1,6 +1,7 @@
 name: Main
 
-on: [workflow_call]
+on:
+  workflow_call:
 
 env:
   WORKDIR: "/tmp/build-dir"  # NOTE: Keep in sync with second occurrence at the bottom
