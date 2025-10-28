@@ -95,12 +95,17 @@ jobs:
           ulimit -S -s
       - id: build-job-asts
         name: "Build Job ASTs"
-        continue-on-error: true
         run: |
           source ${{ env.BOILERPLATE }}
           make -s stage1
+
+      ### NOTE: Every job after here should be resilient to build-job-asts
+      ### and/or build-job steps failing. Use [if: '!cancelled()'] with quotes
+      ### or a multi-line version.
+
       - id: build-job
-        continue-on-error: true
+        if: |
+          !cancelled()
         name: "Build Job Proofs"
         run: |
           source ${{ env.BOILERPLATE }}
@@ -108,6 +113,8 @@ jobs:
           dune build _build/install/default/bin/filter-dune-output
           dune build -j${NJOBS} ${{ env.DUNE_TARGETS }} 2>&1 | _build/install/default/bin/filter-dune-output
       - name: "Extract Job Data"
+        if: |
+          !cancelled()
         run: |
           source ${{ env.BOILERPLATE }}
           # Print information on the size of the _build directory.
@@ -130,12 +137,16 @@ jobs:
           rsync -a --prune-empty-dirs --include="*/" --include="*.d" --exclude="*" _build/ ${{ env.SCRATCHDIR }}/build_vd
 
       - name: "Skip Base Build?"
-        if: needs.gen-job.outputs.compare != '1'
+        if: |
+          !cancelled() &&
+          needs.gen-job.outputs.compare != '1'
         run: |
           echo "Skipping Base Build because of pipeline flags" # TODO: mention actual flag name
 
       - name: "Checkout Base Commits"
-        if: needs.gen-job.outputs.compare == '1'
+        if: |
+          !cancelled() &&
+          needs.gen-job.outputs.compare == '1'
         run: |
           make nuke CONFIRM=yes
           git clean -ffxd
@@ -145,18 +156,24 @@ jobs:
           make describe | sort | tee desc.txt
           diff <(sort ${{ env.SCRATCHDIR }}/${{ env.COMMITS_BASE }}) desc.txt
       - name: "Build Base ASTs"
-        if: needs.gen-job.outputs.compare == '1'
+        if: |
+          !cancelled() &&
+          needs.gen-job.outputs.compare == '1'
         run: |
           source ${{ env.BOILERPLATE }}
           make -s stage1
       - name: "Build Base Commits"
-        if: needs.gen-job.outputs.compare == '1'
+        if: |
+          !cancelled() &&
+          needs.gen-job.outputs.compare == '1'
         run: |
           source ${{ env.BOILERPLATE }}
           # Actual build.
           dune build _build/install/default/bin/filter-dune-output
           (dune build -j${NJOBS} ${{ env.DUNE_TARGETS }}  2>&1 | _build/install/default/bin/filter-dune-output)
       - name: "Extract Base Data"
+        if: |
+          !cancelled()
         run: |
           source ${{ env.BOILERPLATE }}
           # Print information on the size of the _build directory.
@@ -175,7 +192,9 @@ jobs:
 
       #### PERF ANALYSIS ####
       - name: "Checkout Job Commits (again)"
-        if: needs.gen-job.outputs.compare == '1'
+        if: |
+          !cancelled() &&
+          needs.gen-job.outputs.compare == '1'
         run: |
           make nuke CONFIRM=yes
           git clean -ffxd
@@ -184,7 +203,9 @@ jobs:
           make describe | sort | tee desc.txt
           diff <(sort ${{ env.SCRATCHDIR }}/${{ env.COMMITS_JOB }}) desc.txt
       - name: "Performance Analysis"
-        if: needs.gen-job.outputs.compare == '1'
+        if: |
+          !cancelled() &&
+          needs.gen-job.outputs.compare == '1'
         run: |
           source ${{ env.BOILERPLATE }}
           dune build fmdeps/BRiCk/rocq-tools
@@ -212,7 +233,10 @@ jobs:
           # python3 support/fm-perf/post_fm_perf.py --access-token ${PROOF_PERF_TOKEN} --project-id 74911021 --mr-id 3913 -f ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md --pipe-url "https://gitlab.com/skylabs_ai/FM/auto/-/pipelines/2116778517"
 
       - name: "Main Build Failure?"
-        if: steps.build-job-asts.outcome != 'success' || steps.build-job.outcome != 'success'
+        if: |
+          !cancelled() &&
+          ( steps.build-job-asts.outcome != 'success' ||
+            steps.build-job.outcome != 'success' )
         run: |
           echo "## Main build failed" | tee >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -220,6 +244,8 @@ jobs:
           echo " - Proofs: ${{ steps.build-job.outcome }}"  | tee >> $GITHUB_STEP_SUMMARY
           exit 1
       - name: "Upload Artifacts"
+        if: |
+          !cancelled()
         uses: actions/upload-artifact@v4
         with:
           name: "reports"
