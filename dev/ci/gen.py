@@ -1,4 +1,4 @@
-#!/usr/bin/env -S uv run --python 3.11 --no-managed-python --script
+#!/usr/bin/env -S uv run --no-managed-python --script
 #
 # /// script
 # requires-python = ">=3.11"
@@ -44,7 +44,7 @@ class Labels:
     same_branch : bool
     compare : bool
     @classmethod
-    def empty(cls):
+    def defaults(cls):
         return cls(same_branch=True, compare=True)
     @classmethod
     def of_str(cls, label_str):
@@ -52,7 +52,7 @@ class Labels:
         return cls.of_set(labels)
     @classmethod
     def of_set(cls, labels):
-        res = cls.empty()
+        res = cls.defaults()
         for x in labels:
             match x.strip():
                 case Label.NO_SAME_BRANCH:
@@ -322,7 +322,7 @@ class ReposData:
         if trigger.is_trigger_repo(repo):
             return [trigger.branch]
         # all other repos get the default branch as a fallback
-        if trigger.labels.same_branch:
+        if trigger.event_type == EventType.PULL_REQUEST and trigger.labels.same_branch:
             # if same-branch is set, the trigger branch name is our first choice
             nondefault_pr_base = await trigger.non_default_trigger_pr_base
             if nondefault_pr_base:
@@ -358,7 +358,8 @@ class ReposData:
     # base ref of pr or default branch
     async def pr_base_ref(self, repo):
         base_ref = None
-        pr = await self.pr(repo, self[repo].job_branch)
+        branch = self[repo].job_branch
+        pr = await self.pr(repo, branch=branch)
         if pr != None:
             return f"origin/{pr.base_ref}"
         else:
@@ -443,11 +444,14 @@ class ReposData:
         if fail:
             raise Exception("Invariants violated. See error messages above.")
 
-    async def pr(self, repo : Repo, branch : str | None = None, initial_pr_number : int | None = None) -> PRData:
+    async def pr(self, repo : Repo, branch : str | None = None, initial_pr_number : int | None = None) -> PRData | None:
         data = self[repo]
         if isinstance(data.pr, PRData):
             return data.pr
-        if branch == None and initial_pr_number == None:
+        elif branch != None and branch == repo.default_branch:
+            # There should not be pipelines running against the default branch that have an associated PR
+            return None
+        elif branch == None and initial_pr_number == None:
             raise Exception(f"Trying to find PR for repo {repo.github_path}: Either [branch] or [initial_pr_number] are required")
         elif branch != None and initial_pr_number == None:
             data.pr = PRData.of_api_response(await GH.branch_pr(repo.github_path, branch))
@@ -488,7 +492,8 @@ class Trigger:
         args["repo"] = repo
         pr_given = args["pr"] != None
         pr = await DATA.pr(repo, branch=args["branch"], initial_pr_number=args["pr"])
-        args["pr"] = pr.number
+        if pr != None:
+            args["pr"] = pr.number
         trigger = cls(**args)
         if trigger.labels == None:
             # We assume that we only have labels if a PR was given in the triggering event
@@ -506,8 +511,8 @@ class Trigger:
         if self.labels != None:
             return
         if self.pr == None:
-            logger.WARNING(f"Neither labels nor a PR were given via cmdline arguments. Assuming empty label set. Use --trigger-labels='' to silence this warning.")
-            self.labels = Labels.empty
+            logger.warn(f"Neither labels nor a PR were given via cmdline arguments. Assuming empty label set. Use --trigger-labels='' to silence this warning.")
+            self.labels = Labels.defaults()
             return
         self.labels = (await self.pr_obj).labels
 
@@ -602,8 +607,10 @@ async def make_config(parser, context, args):
         DATA.print()
         DATA.output_base_refs(args.output_file_base, repos.repos)
 
-    if GH.g.rate_limit:
+    if GH.g != None and GH.g.rate_limit:
         logger.info(GH.g.rate_limit)
+    else:
+        logger.info("No API calls ran. Rate limit info not available.")
 
 
 @subcmd(help="Compute the commits to be used for a CI job. TODO: output format, output file?")
