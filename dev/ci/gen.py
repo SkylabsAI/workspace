@@ -257,8 +257,6 @@ class PRData:
     @classmethod
     def of_api_response(cls, response):
         has_mergeable = "mergeable" in response
-        if not has_mergeable:
-            assert (response["draft"] == True)
         mergeable = response["mergeable"] if has_mergeable else False
         return cls(number=response["number"],
             head_ref=response["head"]["ref"],

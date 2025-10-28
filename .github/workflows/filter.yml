@@ -4,12 +4,23 @@ on:
   workflow_call:
 
 jobs:
-  Run:
+  Run-workspace:
     if: |
-      ( github.event_name == 'pull_request'
-        || ( github.event_name == 'push'
-             && github.ref == github.event.repository.default_branch ) )
-      && !contains(github.event.pull_request.labels.*.name, 'ci-skip')
+      ( github.repository == 'SkylabsAI/workspace' ) &&
+      ( github.event_name == 'pull_request' ||
+        ( github.event_name == 'push' &&
+          github.ref_name == github.event.repository.default_branch ) ) &&
+      !contains(github.event.pull_request.labels.*.name, 'ci-skip')
+    # NOTE: Keep the previous line in sync with the `Skip` job below (modulo negation)
+    uses: ./.github/workflows/main.yml
+    secrets: inherit
+  Run-elsewhere:
+    if: |
+      ( github.repository != 'SkylabsAI/workspace' ) &&
+      ( github.event_name == 'pull_request' ||
+        ( github.event_name == 'push' &&
+          github.ref_name == github.event.repository.default_branch ) ) &&
+      !contains(github.event.pull_request.labels.*.name, 'ci-skip')
     # NOTE: Keep the previous line in sync with the `Skip` job below (modulo negation)
     uses: SkylabsAI/workspace/.github/workflows/main.yml@main
     secrets: inherit

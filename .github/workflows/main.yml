@@ -18,10 +18,6 @@ env:
   DUNE_PROFILE: "br_timing"
   UV_LINK_MODE: "copy"
 
-defaults:
-  run:
-    shell: bash
-
 jobs:
   gen-job:
     runs-on:
