@@ -226,8 +226,6 @@ class GithubSingleton:
             uniq_pr = pr
         self.memoize["branch_pr"][key] = uniq_pr
         return uniq_pr
-    async def has_pr(self, repo, branch):
-        return await self.branch_pr(repo,branch) == None
 
 GH = GithubSingleton()
 
@@ -308,7 +306,7 @@ class ReposData:
         # all other repos get the default branch as a fallback
         if trigger.event_type == EventType.PULL_REQUEST and trigger.labels.same_branch:
             # if same-branch is set, the trigger branch name is our first choice
-            nondefault_pr_base = await trigger.non_default_trigger_pr_base
+            nondefault_pr_base = await trigger.non_default_trigger_pr_base()
             if nondefault_pr_base:
                 # if the base of the trigger PR is not the repo's default branch, the base becomes a valid second choice for all other repos
                 return [trigger.branch, nondefault_pr_base, repo.default_branch]
@@ -361,7 +359,7 @@ class ReposData:
             return data.base_ref
         assert (job_branch != None)
         assert (job_ref != None)
-        nondefault_pr_base = await trigger.non_default_trigger_pr_base
+        nondefault_pr_base = await trigger.non_default_trigger_pr_base()
         if trigger.repo == repo:
             base_ref = await self.pr_base_ref(repo)
             merge_base = repo.uniq_merge_base(base_ref, job_ref)
@@ -390,7 +388,7 @@ class ReposData:
     async def check_invariants(self, trigger, repos):
         fail = False
         same_branch_repos = [r for r in repos if self[r].job_branch == trigger.branch]
-        if trigger.non_default_trigger_pr_base:
+        if trigger.labels.same_branch and await trigger.non_default_trigger_pr_base():
             missing_prs : list[Repo] = []
             wrong_targets : dict[Repo,PRData] = {}
             for repo in same_branch_repos:
@@ -404,13 +402,13 @@ class ReposData:
                         wrong_targets[repo] = pr
 
             for repo in missing_prs:
-                logger.error(f"Repo {repo.github_path} has a branch {trigger.branch} but does not have PR. {generic_msg}")
+                logger.error(f"Repo {repo.github_path} has a branch {trigger.branch} but does not have a PR. {generic_msg}")
                 fail = True
             for repo, pr in wrong_targets.items():
                 logger.error(f"Repo {repo.github_path} has a branch {trigger.branch} and PR {pr.number} but the PR's target branch is {pr.base_ref}, not {trigger.branch}. {generic_msg}")
                 fail = True
 
-        if trigger.event_type == EventType.PULL_REQUEST:
+        if trigger.labels.same_branch and trigger.event_type == EventType.PULL_REQUEST:
             missing_prs_and_not_rebased = []
             prs_not_mergeable  = {}
             for repo in same_branch_repos:
@@ -499,8 +497,9 @@ class Trigger:
             # We assume that we only have labels if a PR was given in the triggering event
             await trigger.backfill_labels()
         if trigger.event_type == EventType.PUSH and trigger.branch == trigger.repo.default_branch:
-            # Disable comparison for pushes to default branches
+            # Disable comparison and same-branch for pushes to default branches
             trigger.labels.compare = False
+            trigger.labels.same_branch = False
         if trigger.event_type == EventType.PUSH and trigger.branch != trigger.repo.default_branch:
             # Abort early for pushes to non-default branches
             logger.error("Push pipelines to non-default branches are not currently supoorted")
@@ -522,13 +521,12 @@ class Trigger:
             return
         self.labels = (await self.pr_obj).labels
 
-    @async_cached_property
     async def non_default_trigger_pr_base(self):
-        if self.pr == None: return False
-        pr = await GH.branch_pr(self.repo.github_path, self.pr)
-        if pr == None: return False
-        if self.repo.default_branch != pr["base"]:
-            return pr["base"]
+        if self.pr == None:
+            return None
+        if pr.base_ref and self.repo.default_branch != pr.base_ref:
+            return pr.base_ref
+        return None
 
 def non_empty_str(val): return val if val else None
 
