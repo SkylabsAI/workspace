@@ -2,7 +2,7 @@ SkyLabs AI Workspace
 ====================
 
 This repository provides infrastructure for cloning and working on the various
-SkyLabs AI repositories, within a single workspace.
+SkyLabs AI repositories (public of private), within a single workspace.
 
 This repository also hosts infrastructure for CI and docker images.
 
@@ -26,9 +26,9 @@ cd workspace                                      # Move to the workspace.
 
 You can then optionally clone sub-repositories within it.
 ```sh
-make fmdeps-clone -j    # Cloning FM sub-repos.
-make psi-clone -j       # Cloning psi sub-repos.
-make bluerock-clone -j  # Cloning BlueRock sub-repos, mostly for CI.
+make fmdeps-clone -k -j # Cloning (mostly public) FM sub-repos.
+make psi-clone -j       # Cloning (private) psi sub-repos.
+make bluerock-clone -j  # Cloning (private) BlueRock sub-repos, mostly for CI.
 ```
 
 ### Setting Up FM Dependencies
