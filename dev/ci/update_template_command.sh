@@ -5,8 +5,8 @@
 
 set -euf -o pipefail
 
-if [[ $# -ne 4 ]]; then
-  echo "Error: four command line arguments expected."
+if [[ $# -ne 5 ]]; then
+  echo "Error: five command line arguments expected."
   exit 1
 fi
 

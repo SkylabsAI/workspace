@@ -3,7 +3,7 @@ from arghandler import subcmd, ArgumentHandler
 
 from dataclasses import dataclass
 from collections import defaultdict
-from enum import Enum
+from enum import Enum, StrEnum
 
 import git, git.exc, git.repo, git.repo.fun
 import gitdb, gitdb.exc
@@ -36,7 +36,21 @@ GITHUB_ORGA="SkylabsAI"
 WORKSPACE_REPO="workspace"
 GITHUB_SSH_URL_PREFIX="git@github.com:"
 
-class Label(str, Enum):
+
+class RepoMode(StrEnum):
+    UPSTREAM="upstream"
+    OWNED="owned"
+    DOWNSTREAM="downstream"
+
+    @classmethod
+    def default(cls):
+        return cls.OWNED
+    @classmethod
+    def of_str(cls, s):
+        for name, val in cls.__members__.items():
+            if s.lower() == name.lower(): return val
+
+class Label(StrEnum):
     NO_SAME_BRANCH="No-Same-Branch"
     NO_COMPARE="No-Compare"
 
@@ -79,6 +93,7 @@ class Repo:
     url : str
     default_branch : str
     dir_path : str # relative to workspace root
+    mode: RepoMode | None
 
     @classmethod
     def of_args(cls,args):
@@ -141,8 +156,14 @@ class Repo:
 
     @classmethod
     def of_loop_echo(cls, loop_echo_line):
-        (orga_path, url, default_branch, dir_path) = loop_echo_line.strip().split(" ")
-        return Repo(orga_path=orga_path, url=url, default_branch=default_branch, dir_path=dir_path)
+        data = loop_echo_line.strip().split(" ")
+        match data:
+            case [orga_path, url, default_branch, dir_path, mode]:
+                mode = RepoMode.of_str(mode)
+                return Repo(orga_path=orga_path, url=url, default_branch=default_branch, dir_path=dir_path, mode=mode)
+            case [orga_path, url, default_branch, dir_path]: # backwards compatibility
+                mode = None
+                return Repo(orga_path=orga_path, url=url, default_branch=default_branch, dir_path=dir_path, mode=mode)
 
     def commit_of(self, obj):
         return self.git_repo.commit(obj).hexsha
@@ -602,7 +623,7 @@ async def make_checkout_workspace(parser, context, args):
             # We are in the workspace so we can ask the workspace to give us info about the workspace
             return Workspace().repo
         else:
-            return Repo(orga_path="<stub>", url=f"{GITHUB_SSH_URL_PREFIX}{path}.git", default_branch=default_branch, dir_path="<stub>")
+            return Repo(orga_path="<stub>", url=f"{GITHUB_SSH_URL_PREFIX}{path}.git", default_branch=default_branch, dir_path="<stub>", mode=None)
     trigger = await Trigger.of_args(repo_by_path, args)
     await checkout_workspace_job(trigger)
 

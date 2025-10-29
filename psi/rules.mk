@@ -5,12 +5,13 @@ REPO_NAME = $$(word 1,$$(subst :, ,$$1))
 REPO_URL = ${GITHUB_URL}$$(word 1,$$(subst :, ,$$1)).git
 REPO_BRANCH = $$(word 2,$$(subst :, ,$$1))
 REPO_DIR = psi/$$(word 3,$$(subst :, ,$$1))
+REPO_MODE = $$(word 4,$$(subst :, ,$$1))
 ifneq ($1,sentinel)
 
 PSI_SHOW_CONFIG_TARGETS += psi-${REPO_NAME}-show-config
 .PHONY: psi-${REPO_NAME}-show-config
 psi-${REPO_NAME}-show-config:
-	@echo "$(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)"
+	@echo "$(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR) $(REPO_MODE)"
 
 PSI_CLONE_TARGETS += psi-${REPO_NAME}-clone
 .PHONY: psi-${REPO_NAME}-clone
@@ -118,14 +119,16 @@ PSI_LOOP_TARGETS += psi-${REPO_NAME}-loop
 .PHONY: psi-${REPO_NAME}-loop
 psi-${REPO_NAME}-loop: | loop-workspace
 ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
-	$(Q)$(LOOP_COMMAND) $(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)
+	$(Q)$(LOOP_COMMAND) \
+		$(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR) $(REPO_MODE)
 endif
 
 PSI_REVLOOP_TARGETS += psi-${REPO_NAME}-revloop
 .PHONY: psi-${REPO_NAME}-revloop
 psi-${REPO_NAME}-revloop:
 ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
-	$(Q)$(LOOP_COMMAND) $(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)
+	$(Q)$(LOOP_COMMAND) \
+		$(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR) $(REPO_MODE)
 endif
 endif
 

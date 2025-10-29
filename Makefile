@@ -66,7 +66,7 @@ $(foreach t,$(COMMON_TARGETS),$(eval $(call common_target,$(t))))
 
 .PHONY: workspace-show-config
 workspace-show-config:
-	@echo "SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./"
+	@echo "SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./ owned"
 
 .PHONY: show-config
 show-config: workspace-show-config $(patsubst %,%-show-config,${SUBREPO_DIRS})
@@ -81,7 +81,8 @@ show-config: workspace-show-config $(patsubst %,%-show-config,${SUBREPO_DIRS})
 ifneq ($(LOOP_COMMAND),)
 .PHONY: loop-workspace
 loop-workspace:
-	$(Q)$(LOOP_COMMAND) SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./
+	$(Q)$(LOOP_COMMAND) \
+		SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./ owned
 
 .PHONY: loop-subrepos
 loop-subrepos: $(patsubst %,%-revloop,${SUBREPO_DIRS})
@@ -91,7 +92,8 @@ loop: loop-workspace $(patsubst %,%-loop,${SUBREPO_DIRS})
 
 .PHONY: revloop
 revloop: loop-subrepos
-	$(Q)$(LOOP_COMMAND) SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./
+	$(Q)$(LOOP_COMMAND) \
+		SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./ owned
 endif
 
 .PHONY: clean
