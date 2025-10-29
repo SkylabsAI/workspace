@@ -114,7 +114,8 @@ jobs:
           dune build -j${NJOBS} ${{ env.DUNE_TARGETS }} 2>&1 | _build/install/default/bin/filter-dune-output
       - name: "Extract Job Data"
         if: |
-          !cancelled()
+          !cancelled() &&
+          needs.gen-job.outputs.compare == '1'
         run: |
           source ${{ env.BOILERPLATE }}
           # Print information on the size of the _build directory.
@@ -232,20 +233,10 @@ jobs:
           echo -e '\n</details>\n' >> ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md
           # python3 support/fm-perf/post_fm_perf.py --access-token ${PROOF_PERF_TOKEN} --project-id 74911021 --mr-id 3913 -f ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md --pipe-url "https://gitlab.com/skylabs_ai/FM/auto/-/pipelines/2116778517"
 
-      - name: "Main Build Failure?"
-        if: |
-          !cancelled() &&
-          ( steps.build-job-asts.outcome != 'success' ||
-            steps.build-job.outcome != 'success' )
-        run: |
-          echo "## Main build failed" | tee >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo " - ASTs:   ${{ steps.build-job-asts.outcome }}" | tee >> $GITHUB_STEP_SUMMARY
-          echo " - Proofs: ${{ steps.build-job.outcome }}"  | tee >> $GITHUB_STEP_SUMMARY
-          exit 1
       - name: "Upload Artifacts"
         if: |
-          !cancelled()
+          !cancelled() &&
+          github.event_name != 'push'
         uses: actions/upload-artifact@v4
         with:
           name: "reports"
