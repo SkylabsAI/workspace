@@ -660,6 +660,8 @@ async def make_config(parser, context, args):
         base = await DATA.workspace_base_ref(trigger)
         workspace_git = git.Repo(Workspace().repo.dir_path)
         workspace_git.git.checkout(base)
+        pexpect.run("make -j nuke CONFIRM=yes")
+        pexpect.run("make -j lightweight-clone")
         repos = Repos.make()
         await DATA.compute_base_refs(trigger, repos.repos)
         DATA.print()
