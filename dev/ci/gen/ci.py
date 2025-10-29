@@ -362,6 +362,9 @@ class ReposData:
             else:
                 data.job_ref = f"origin/{data.job_branch}"
 
+    def default_base_ref(self, repo) -> str:
+        return f"origin/{repo.default_branch}"
+
     # base ref of pr or default branch
     async def pr_base_ref(self, repo) -> str:
         base_ref = None
@@ -370,7 +373,7 @@ class ReposData:
         if pr != None:
             return f"origin/{pr.base_ref}"
         else:
-            return f"origin/{repo.default_branch}"
+            return self.default_base_ref(repo)
 
     # needs to run after [compute_job_refs]
     async def base_ref(self, trigger, repo):
@@ -383,7 +386,12 @@ class ReposData:
         if not has_job:
             logger.info(f"{repo.github_path}: Repo has been deleted.")
         nondefault_pr_base = await trigger.non_default_trigger_pr_base()
-        if trigger.repo == repo:
+        # Up- and downstream repos that participate OR trigger in a same-branch pipeline need special handling
+        if trigger.labels.same_branch and repo.mode != RepoMode.OWNED and job_branch==trigger.branch:
+            base_ref = await self.pr_base_ref(repo)
+            assert (base_ref == self.default_base_ref(repo)) # TODO: support for non-default target branches
+            data.base_ref = base_ref
+        elif trigger.repo == repo:
             assert (has_job) # we should not trigger CI from repos that are no longer part of the workspace
             base_ref = await self.pr_base_ref(repo)
             merge_base = repo.uniq_merge_base(base_ref, job_ref)
@@ -448,6 +456,9 @@ class ReposData:
             missing_prs_and_not_rebased = []
             prs_not_mergeable  = {}
             for repo in same_branch_repos:
+                if repo.mode != RepoMode.OWNED:
+                    # We do not place restrictions on PRs or rebased branches on up- an downstream repos
+                    continue
                 pr = await self.pr(repo, branch=trigger.branch)
                 generic_msg = f"All repos participating in a \"pull_request\" pipeline must each have either mergeable PRs, or the triggering PR must target the default branch and every participating repo's branch must be fully rebased on the repo's own default branch."
                 if pr == None and not repo.git_repo.is_ancestor(repo.git_repo.commit(f"origin/{repo.default_branch}"), repo.git_repo.commit(self[repo].job_ref)):
