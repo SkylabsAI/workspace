@@ -267,9 +267,10 @@ class ReposData:
     def __init__(self):
         self.data = {}
     def __getitem__(self, repo):
-        if not (repo in self.data):
-            self.data[repo] = RepoData.empty()
-        return self.data[repo]
+        key = (repo.url, repo.dir_path)
+        if not (key in self.data):
+            self.data[key] = RepoData.empty()
+        return self.data[key]
 
     def print(self):
         for r in self.data:
@@ -285,14 +286,14 @@ class ReposData:
             logger.info(f"Using trigger commit {trigger.commit}")
             data.job_ref = trigger.commit
         elif trigger.labels.same_branch:
-            logger.info(f"Pipeline trigger from outside of {WORKSPACE_REPO} with {Label.NO_SAME_BRANCH} enabled")
+            logger.info(f"Pipeline trigger from outside of {WORKSPACE_REPO}")
             job_choices = await self.job_choices(trigger, ws)
             logger.info(f"Choices for {WORKSPACE_REPO} in order of priority: {job_choices}")
             choice = git_first_existing_choice(ws, job_choices)
             logger.info(f"Using first existing choice for {WORKSPACE_REPO}: {choice}")
             data.job_ref = choice
         else:
-            logger.info(f"Pipeline trigger from outside of {WORKSPACE_REPO} without {Label.NO_SAME_BRANCH} ")
+            logger.info(f"Pipeline trigger from outside of {WORKSPACE_REPO} with {Label.NO_SAME_BRANCH} ")
             default = ws.default_branch
             logger.info(f"Using default branch {default}")
             data.job_ref = default
@@ -341,7 +342,7 @@ class ReposData:
                 data.job_ref = f"origin/{data.job_branch}"
 
     # base ref of pr or default branch
-    async def pr_base_ref(self, repo):
+    async def pr_base_ref(self, repo) -> str:
         base_ref = None
         branch = self[repo].job_branch
         pr = await self.pr(repo, branch=branch)
@@ -357,23 +358,37 @@ class ReposData:
         job_branch = data.job_branch
         if data.base_ref != None:
             return data.base_ref
-        assert (job_branch != None)
-        assert (job_ref != None)
+        has_job = job_ref != None and job_branch != None
+        if not has_job:
+            logger.info(f"{repo.github_path}: Repo has been deleted.")
         nondefault_pr_base = await trigger.non_default_trigger_pr_base()
         if trigger.repo == repo:
+            assert (has_job) # we should not trigger CI from repos that are no longer part of the workspace
             base_ref = await self.pr_base_ref(repo)
             merge_base = repo.uniq_merge_base(base_ref, job_ref)
             logger.info(f"{repo.github_path}: Using merge base of {base_ref} and job ref {job_ref}: {merge_base}")
             data.base_ref = merge_base
         elif trigger.labels.same_branch and job_branch == trigger.branch:
-            base_ref = await self.pr_base_ref(repo)
-            merge_base = repo.uniq_merge_base(base_ref, job_ref)
-            logger.info(f"{repo.github_path}: Using merge base of {base_ref} and job ref {job_ref}: {merge_base}")
-            data.base_ref = merge_base
+            if has_job:
+                base_ref = await self.pr_base_ref(repo)
+                merge_base = repo.uniq_merge_base(base_ref, job_ref)
+                logger.info(f"{repo.github_path}: Using merge base of {base_ref} and job ref {job_ref}: {merge_base}")
+                data.base_ref = merge_base
+            else:
+                data.base_ref = await self.pr_base_ref(repo)
+                logger.info(f"{repo.github_path}: Using: {data.base_ref}")
+                repo.ensure_fetched(data.base_ref, depth=None)
         elif trigger.labels.same_branch and job_branch == nondefault_pr_base:
-            data.base_ref = job_branch # = nondefault_pr_base
+            if has_job:
+                data.base_ref = f"origin/nondefault_pr_base"
+                logger.info(f"{repo.github_path}: Using non-default target branch {nondefault_pr_base} of triggering PR: {data.base_ref}")
+            else:
+                data.base_ref = f"origin/{repo.default_branch}"
+                repo.ensure_fetched(data.base_ref, depth=None)
+                logger.info(f"{repo.github_path}: Using default branch: {data.base_ref}")
         else:
             # whatever we used for the main job, we'll use it for the comparison base
+            assert (has_job)
             data.base_ref = job_ref
         return data.base_ref
 
@@ -393,7 +408,7 @@ class ReposData:
             wrong_targets : dict[Repo,PRData] = {}
             for repo in same_branch_repos:
                 pr = await self.pr(repo, branch=trigger.branch)
-                generic_msg = f"All repos participating in a {Label.NO_SAME_BRANCH} pipeline with a custom target branch must have PRs open with the same target branch."
+                generic_msg = f"All repos participating in a pipeline with a custom target branch must have PRs open with the same target branch."
                 if pr == None:
                     missing_prs.append(repo)
                 else:
@@ -413,8 +428,8 @@ class ReposData:
             prs_not_mergeable  = {}
             for repo in same_branch_repos:
                 pr = await self.pr(repo, branch=trigger.branch)
-                generic_msg = f"All repos participating in a {Label.NO_SAME_BRANCH} \"pull_request\" pipeline with must each have either mergeable PRs or the triggering PR must target the default branch and the participating PR is fully rebased on its own default branch."
-                if pr == None and not repo.git_repo.is_ancestor(repo.git_repo.commit(repo.default_branch), repo.git_repo.commit(self[repo].job_ref)):
+                generic_msg = f"All repos participating in a \"pull_request\" pipeline must each have either mergeable PRs, or the triggering PR must target the default branch and every participating repo's branch must be fully rebased on the repo's own default branch."
+                if pr == None and not repo.git_repo.is_ancestor(repo.git_repo.commit(f"origin/{repo.default_branch}"), repo.git_repo.commit(self[repo].job_ref)):
                     missing_prs_and_not_rebased.append(repo)
                 elif pr != None and pr.mergeable != True:
                     prs_not_mergeable[repo] = pr
@@ -490,8 +505,7 @@ class Trigger:
         args["repo"] = repo
         pr_given = args["pr"] != None
         pr = await DATA.pr(repo, branch=args["branch"], initial_pr_number=args["pr"])
-        if pr != None:
-            args["pr"] = pr.number
+        args["pr"] = pr
         trigger = cls(**args)
         if trigger.labels == None:
             # We assume that we only have labels if a PR was given in the triggering event
