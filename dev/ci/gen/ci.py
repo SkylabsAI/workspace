@@ -337,7 +337,7 @@ class ReposData:
                     logger.warning(f"Repo {repo.github_path} has a PR for {data.job_branch} but {status}. Falling back to {data.job_branch}.")
                     data.job_ref = f"origin/{data.job_branch}"
                 else:
-                    logger.error(f"Repo {repo.github_path} has a branch {trigger.branch} but no PR exists for it.")
+                    logger.warning(f"Repo {repo.github_path} has a branch {trigger.branch} but no PR exists for it. Cannot determine merge commit. Falling back to {data.job_branch}.")
                     data.job_ref = f"origin/{data.job_branch}"
             else:
                 data.job_ref = f"origin/{data.job_branch}"
@@ -387,10 +387,10 @@ class ReposData:
         for repo in repos:
             await self.base_ref(trigger, repo)
 
-    async def check_invariants(self, trigger):
+    async def check_invariants(self, trigger, repos):
         fail = False
+        same_branch_repos = [r for r in repos if self[r].job_branch == trigger.branch]
         if trigger.non_default_trigger_pr_base:
-            same_branch_repos = list(filter(lambda r: self[r].job_branch == trigger.branch, repos))
             missing_prs : list[Repo] = []
             wrong_targets : dict[Repo,PRData] = {}
             for repo in same_branch_repos:
@@ -411,7 +411,6 @@ class ReposData:
                 fail = True
 
         if trigger.event_type == EventType.PULL_REQUEST:
-            same_branch_repos = list(filter(lambda r: self[r].job_branch == trigger.branch, repos))
             missing_prs_and_not_rebased = []
             prs_not_mergeable  = {}
             for repo in same_branch_repos:
@@ -435,7 +434,6 @@ class ReposData:
 
     async def pr(self, repo : Repo, branch : str | None = None, initial_pr_number : int | None = None) -> PRData | None:
         data = self[repo]
-        print(branch, repo)
         if isinstance(data.pr, PRData):
             return data.pr
         elif branch != None and branch == repo.default_branch:
@@ -611,6 +609,8 @@ async def make_config(parser, context, args):
     await DATA.compute_job_refs(trigger, repos.repos)
     DATA.print()
     DATA.output_job_refs(args.output_file_job, repos.repos)
+
+    await DATA.check_invariants(trigger, repos.repos)
 
     if trigger.labels.compare:
         base = await DATA.workspace_base_ref(trigger)
