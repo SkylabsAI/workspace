@@ -6,4 +6,3 @@
 
 BRDEPS += SkylabsAI/bluerock.NOVA:skylabs-proof:NOVA/:downstream
 BRDEPS += SkylabsAI/bluerock.bhv:skylabs-main:bhv/:downstream
-BRDEPS += SkylabsAI/bluerock.nova-interface:skylabs-main:nova-interface/:downstream
