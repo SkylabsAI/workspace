@@ -18,13 +18,19 @@ import httpx
 import gidgethub.httpx
 
 import logging
-logging.basicConfig(level=logging.INFO)
+
 logger = logging.getLogger("helper")
-handler = logging.StreamHandler()
-formatter = logging.Formatter(
-        '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+log_format = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
+
+def reconfigure_logging(level):
+    logging.basicConfig(
+        level = logging.INFO,
+        format = log_format,
+        force = True
+    )
+reconfigure_logging(logging.INFO)
+
+
 
 GITHUB_ORGA="SkylabsAI"
 WORKSPACE_REPO="workspace"
@@ -530,7 +536,7 @@ def non_empty_str(val): return val if val else None
 
 def log_level(level_str):
     level = logging.getLevelName(level_str)
-    logging.basicConfig(level=level)
+    reconfigure_logging(level=level)
     return level_str
 
 def add_common_args(parser):
