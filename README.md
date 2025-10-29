@@ -60,6 +60,7 @@ Sub-Repository Control
 
 The following folders gather sub-repositories:
 - `fmdeps` (all the core FM repositories),
+- `psi` (all other SkyLabs AI repositories),
 - `bluerock` (all the BlueRock repositories used by FM CI).
 
 These directories contain a file called `config.mk`, which defines set set of

@@ -5,12 +5,13 @@ REPO_NAME = $$(word 1,$$(subst :, ,$$1))
 REPO_URL = ${GITHUB_URL}$$(word 1,$$(subst :, ,$$1)).git
 REPO_BRANCH = $$(word 2,$$(subst :, ,$$1))
 REPO_DIR = fmdeps/$$(word 3,$$(subst :, ,$$1))
+REPO_MODE = $$(word 4,$$(subst :, ,$$1))
 ifneq ($1,sentinel)
 
 FMDEPS_SHOW_CONFIG_TARGETS += fmdeps-${REPO_NAME}-show-config
 .PHONY: fmdeps-${REPO_NAME}-show-config
 fmdeps-${REPO_NAME}-show-config:
-	@echo "$(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)"
+	@echo "$(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR) $(REPO_MODE)"
 
 FMDEPS_CLONE_TARGETS += fmdeps-${REPO_NAME}-clone
 .PHONY: fmdeps-${REPO_NAME}-clone
@@ -118,14 +119,16 @@ FMDEPS_LOOP_TARGETS += fmdeps-${REPO_NAME}-loop
 .PHONY: fmdeps-${REPO_NAME}-loop
 fmdeps-${REPO_NAME}-loop: | loop-workspace
 ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
-	$(Q)$(LOOP_COMMAND) $(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)
+	$(Q)$(LOOP_COMMAND) \
+		$(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR) $(REPO_MODE)
 endif
 
 FMDEPS_REVLOOP_TARGETS += fmdeps-${REPO_NAME}-revloop
 .PHONY: fmdeps-${REPO_NAME}-revloop
 fmdeps-${REPO_NAME}-revloop:
 ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
-	$(Q)$(LOOP_COMMAND) $(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)
+	$(Q)$(LOOP_COMMAND) $(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) \
+		$(REPO_DIR) $(REPO_MODE)
 endif
 endif
 

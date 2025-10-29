@@ -6,12 +6,13 @@ REPO_NAME = $$(word 1,$$(subst :, ,$$1))
 REPO_URL = ${GITHUB_URL}$$(word 1,$$(subst :, ,$$1)).git
 REPO_BRANCH = $$(word 2,$$(subst :, ,$$1))
 REPO_DIR = bluerock/$$(word 3,$$(subst :, ,$$1))
+REPO_MODE = $$(word 4,$$(subst :, ,$$1))
 ifneq ($1,sentinel)
 
 BLUEROCK_SHOW_CONFIG_TARGETS += bluerock-${REPO_NAME}-show-config
 .PHONY: bluerock-${REPO_NAME}-show-config
 bluerock-${REPO_NAME}-show-config:
-	@echo "$(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)"
+	@echo "$(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR) $(REPO_MODE)"
 
 BLUEROCK_CLONE_TARGETS += bluerock-${REPO_NAME}-clone
 .PHONY: bluerock-${REPO_NAME}-clone
@@ -119,14 +120,16 @@ BLUEROCK_LOOP_TARGETS += bluerock-${REPO_NAME}-loop
 .PHONY: bluerock-${REPO_NAME}-loop
 bluerock-${REPO_NAME}-loop: | loop-workspace
 ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
-	$(Q)$(LOOP_COMMAND) $(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)
+	$(Q)$(LOOP_COMMAND) \
+		$(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR) $(REPO_MODE)
 endif
 
 BLUEROCK_REVLOOP_TARGETS += bluerock-${REPO_NAME}-revloop
 .PHONY: bluerock-${REPO_NAME}-revloop
 bluerock-${REPO_NAME}-revloop:
 ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
-	$(Q)$(LOOP_COMMAND) $(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR)
+	$(Q)$(LOOP_COMMAND) \
+		$(REPO_NAME) $(REPO_URL) $(REPO_BRANCH) $(REPO_DIR) $(REPO_MODE)
 endif
 endif
 
