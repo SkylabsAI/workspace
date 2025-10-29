@@ -72,26 +72,13 @@ class Hashes:
     def default(cls, repo):
         return cls.of_branch(repo, repo.default_branch)
 
-repo_store = {}
-
 @dataclass(frozen=True, kw_only=True)
-class RepoAux:
+class Repo:
     orga_path : str
     url : str
     default_branch : str
     dir_path : str # relative to workspace root
 
-
-@dataclass(frozen=True, kw_only=True)
-class Repo(RepoAux):
-    @staticmethod
-    def __new__(cls, **kwargs):
-        key = (kwargs["url"], kwargs["dir_path"])
-        if key not in repo_store:
-            repo = RepoAux.__new__(Repo)
-            Repo.__init__(repo, **kwargs)
-            repo_store[key] = repo
-        return repo_store[key]
     @classmethod
     def of_args(cls,args):
         args = {f : getattr(args, f"repo_{f}") for f in cls.__dataclass_fields__.keys()}
