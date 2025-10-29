@@ -524,8 +524,8 @@ class Trigger:
     async def non_default_trigger_pr_base(self):
         if self.pr == None:
             return None
-        if pr.base_ref and self.repo.default_branch != pr.base_ref:
-            return pr.base_ref
+        if self.pr.base_ref and self.repo.default_branch != self.pr.base_ref:
+            return self.pr.base_ref
         return None
 
 def non_empty_str(val): return val if val else None
