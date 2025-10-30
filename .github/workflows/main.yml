@@ -8,7 +8,7 @@ env:
   SCRATCHDIR: "/tmp/scratch"
   COMMITS_JOB: "commits_job.txt"
   COMMITS_BASE: "commits_base.txt"
-  DUNE_TARGET: "@fmdeps/all @fmdeps/runtest @psi/all @psi/runtest @bluerock/bhv/proof @bluerock/NOVA/all @bluerock/nova-interface/all"
+  DUNE_TARGETS: "@fmdeps/all @fmdeps/runtest @psi/all @psi/runtest @bluerock/bhv/proof @bluerock/NOVA/all @bluerock/nova-interface/all"
   BOILERPLATE: "/home/coq/activate.inc.sh"
   CLICOLOR: "1"
   GNUMAKEFLAGS: "--no-print-directory"
@@ -83,15 +83,13 @@ jobs:
           ./dev/ci/checkout.sh ${{ env.SCRATCHDIR }}/${{ env.COMMITS_JOB }}
           make describe | sort | tee desc.txt
           diff <(sort ${{ env.SCRATCHDIR }}/${{ env.COMMITS_JOB }}) desc.txt
-      # - name: "Set stack limit for following steps"
-      #   run: |
-      #     echo "ulimit -S -s 32768" >> ~/.bashrc
       - name: "Create Directory structure for dune"
         run: |
           mkdir -p ~/.cache/ ~/.config/dune/
           cp fmdeps/fm-ci/ci/dune_config ~/.config/dune/config
       - name: "Test stack limit"
         run: |
+          source ${{ env.BOILERPLATE }}
           ulimit -S -s
       - id: build-job-asts
         name: "Build Job ASTs"
@@ -174,7 +172,8 @@ jobs:
           (dune build -j${NJOBS} ${{ env.DUNE_TARGETS }}  2>&1 | _build/install/default/bin/filter-dune-output)
       - name: "Extract Base Data"
         if: |
-          !cancelled()
+          !cancelled() &&
+          needs.gen-job.outputs.compare == '1'
         run: |
           source ${{ env.BOILERPLATE }}
           # Print information on the size of the _build directory.
