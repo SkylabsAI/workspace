@@ -8,7 +8,7 @@ env:
   SCRATCHDIR: "/tmp/scratch"
   COMMITS_JOB: "commits_job.txt"
   COMMITS_BASE: "commits_base.txt"
-  DUNE_TARGET: "@fmdeps/all @fmdeps/runtest @psi/all @psi/runtest @bluerock/bhv/proof @bluerock/NOVA/all @bluerock/nova-interface/all"
+  DUNE_TARGETS: "@fmdeps/all @fmdeps/runtest @psi/all @psi/runtest @bluerock/bhv/proof @bluerock/NOVA/all @bluerock/nova-interface/all"
   BOILERPLATE: "/home/coq/activate.inc.sh"
   CLICOLOR: "1"
   GNUMAKEFLAGS: "--no-print-directory"
@@ -66,33 +66,25 @@ jobs:
         NJOBS: "16"
         BASH_ENV: "/home/coq/.profile"
     steps:
-      - uses: SkylabsAI/workspace/.github/actions/initialize_workspace@main
+      # TODO branches here are a problem
+      - name: "Prepare Workspace"
+        uses: SkylabsAI/workspace/.github/actions/prepare_workspace@main
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
-      - name: "Download Commit Files"
-        uses: actions/download-artifact@v5
-        with:
-          name: "commit-files"
-          path: ${{ env.SCRATCHDIR }}
-      - name: "Job Checkout and Cleanup"
-        run: |
-          make nuke CONFIRM=yes
-          git clean -ffxd
-          git reset --hard
-          rm -rf _build
-          ./dev/ci/checkout.sh ${{ env.SCRATCHDIR }}/${{ env.COMMITS_JOB }}
-          make describe | sort | tee desc.txt
-          diff <(sort ${{ env.SCRATCHDIR }}/${{ env.COMMITS_JOB }}) desc.txt
-      # - name: "Set stack limit for following steps"
-      #   run: |
-      #     echo "ulimit -S -s 32768" >> ~/.bashrc
+
+      # TODO branches here are a problem
+      - name: "Checkout Job Commits"
+        uses: SkylabsAI/workspace/.github/actions/checkout_workspace@main
+
       - name: "Create Directory structure for dune"
         run: |
           mkdir -p ~/.cache/ ~/.config/dune/
           cp fmdeps/fm-ci/ci/dune_config ~/.config/dune/config
       - name: "Test stack limit"
         run: |
+          source ${{ env.BOILERPLATE }}
           ulimit -S -s
+
       - id: build-job-asts
         name: "Build Job ASTs"
         run: |
@@ -137,25 +129,15 @@ jobs:
           mv perf-data ${{ env.SCRATCHDIR }}/perf-data
           rsync -a --prune-empty-dirs --include="*/" --include="*.d" --exclude="*" _build/ ${{ env.SCRATCHDIR }}/build_vd
 
-      - name: "Skip Base Build?"
-        if: |
-          !cancelled() &&
-          needs.gen-job.outputs.compare != '1'
-        run: |
-          echo "Skipping Base Build because of pipeline flags" # TODO: mention actual flag name
-
+      # TODO branches here are a problem
       - name: "Checkout Base Commits"
+        uses: SkylabsAI/workspace/.github/actions/checkout_workspace@main
         if: |
           !cancelled() &&
           needs.gen-job.outputs.compare == '1'
-        run: |
-          make nuke CONFIRM=yes
-          git clean -ffxd
-          git reset --hard
-          rm -rf _build
-          ./dev/ci/checkout.sh ${{ env.SCRATCHDIR }}/${{ env.COMMITS_BASE }}
-          make describe | sort | tee desc.txt
-          diff <(sort ${{ env.SCRATCHDIR }}/${{ env.COMMITS_BASE }}) desc.txt
+        with:
+          CHECKOUT_BASE: true
+
       - name: "Build Base ASTs"
         if: |
           !cancelled() &&
@@ -174,7 +156,8 @@ jobs:
           (dune build -j${NJOBS} ${{ env.DUNE_TARGETS }}  2>&1 | _build/install/default/bin/filter-dune-output)
       - name: "Extract Base Data"
         if: |
-          !cancelled()
+          !cancelled() &&
+          needs.gen-job.outputs.compare == '1'
         run: |
           source ${{ env.BOILERPLATE }}
           # Print information on the size of the _build directory.
@@ -192,17 +175,14 @@ jobs:
           mv perf-data ${{ env.SCRATCHDIR }}/perf-data_ref
 
       #### PERF ANALYSIS ####
+      # TODO branches here are a problem
       - name: "Checkout Job Commits (again)"
+        uses: SkylabsAI/workspace/.github/actions/checkout_workspace@main
         if: |
           !cancelled() &&
           needs.gen-job.outputs.compare == '1'
-        run: |
-          make nuke CONFIRM=yes
-          git clean -ffxd
-          git reset --hard
-          ./dev/ci/checkout.sh ${{ env.SCRATCHDIR }}/${{ env.COMMITS_JOB }}
-          make describe | sort | tee desc.txt
-          diff <(sort ${{ env.SCRATCHDIR }}/${{ env.COMMITS_JOB }}) desc.txt
+
+
       - name: "Performance Analysis"
         if: |
           !cancelled() &&
