@@ -108,6 +108,43 @@ jobs:
           source ${{ env.BOILERPLATE }}
           ./fmdeps/fm-ci/docker/opam_build.sh "${{ env.ROCQ_LOG_PREFIX }}" '${{ env.OPAM_PACKAGES }}'
 
+  docker-opam-build:
+    needs: gen-job
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.WORKDIR }}
+    runs-on: fm-ci-1
+    container:
+      image: "ghcr.io/skylabsai/workspace:fm-default"
+      options: "-v /cache:/cache:ro -v /home/coq/.ssh:/home/coq/.ssh -v /home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json -v /var/run/docker.sock:/var/run/docker.sock"
+    steps:
+      # TODO branches here are a problem
+      - name: "Prepare Workspace"
+        uses: SkylabsAI/workspace/.github/actions/prepare_workspace@main
+        with:
+          FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
+      # TODO branches here are a problem
+      - name: "Checkout Job Commits"
+        uses: SkylabsAI/workspace/.github/actions/checkout_workspace@main
+      # Hacky setup
+      - name: "Docker pre-setup"
+        run: |
+          sudo groupadd -g 988 docker
+          sudo adduser coq docker
+          ls -l /var/run/docker.sock
+          sudo apt-get update && sudo apt-get install -y docker
+      # Actual job
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - id: build-job
+        if: |
+          !cancelled()
+        name: "Build Job Proofs"
+        run: |
+          source ${{ env.BOILERPLATE }}
+          make -C fmdeps/fm-ci/docker fm-release
+
   full-build:
     needs: gen-job
     defaults:
