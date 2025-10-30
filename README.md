@@ -80,3 +80,8 @@ There are more, but these can be dangerous:
 - `make fmdeps-checkout-main` resets all the repositories to our main branch.
 
 Similar targets are available for other sub-repository directories.
+
+Worktree Support
+---------------------
+
+For worktree support, consult [./dev/worktrees/README-worktree.md](./dev/worktrees/README-worktree.md).
