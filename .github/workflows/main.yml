@@ -17,6 +17,8 @@ env:
   DUNE_CONFIG__BACKGROUND_DIGESTS: "disabled"
   DUNE_PROFILE: "br_timing"
   UV_LINK_MODE: "copy"
+  ROCQ_LOG_PREFIX: bluerock
+  OPAM_PACKAGES: opam pin | grep -E "/fmdeps/(auto|BRiCk|vendored/(vscoq|coq-lsp))" | grep -E -v "rocq-bluerock-cpp-(demo|stdlib)"
 
 jobs:
   gen-job:
@@ -38,6 +40,34 @@ jobs:
         uses: ./workspace_checkout/.github/actions/config
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
+
+  opam-build:
+    needs: gen-job
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.WORKDIR }}
+    runs-on:
+      group: FM
+    container:
+      image: "ghcr.io/skylabsai/workspace:fm-default"
+      options: "-v /cache:/cache:ro -v /home/coq/.ssh:/home/coq/.ssh -v /home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
+    steps:
+      # TODO branches here are a problem
+      - name: "Prepare Workspace"
+        uses: SkylabsAI/workspace/.github/actions/prepare_workspace@main
+        with:
+          FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
+      # TODO branches here are a problem
+      - name: "Checkout Job Commits"
+        uses: SkylabsAI/workspace/.github/actions/checkout_workspace@main
+      - id: build-job
+        if: |
+          !cancelled()
+        name: "Opam Install"
+        run: |
+          source ${{ env.BOILERPLATE }}
+          ./fmdeps/fm-ci/docker/opam_build.sh "${{ env.ROCQ_LOG_PREFIX }}" '${{ env.OPAM_PACKAGES }}'
 
   full-build:
     needs: gen-job
