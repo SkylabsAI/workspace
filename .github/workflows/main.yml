@@ -22,6 +22,8 @@ env:
   DUNE_CONFIG__BACKGROUND_DIGESTS: "disabled"
   DUNE_PROFILE: "br_timing"
   UV_LINK_MODE: "copy"
+  NJOBS: "16"
+  BASH_ENV: "/home/coq/.profile"
   ROCQ_LOG_PREFIX: bluerock
   OPAM_PACKAGES: opam pin | grep -E "/fmdeps/(auto|BRiCk|vendored/(vscoq|coq-lsp))" | grep -E -v "rocq-bluerock-cpp-(demo|stdlib)"
 
@@ -32,9 +34,6 @@ jobs:
     container:
       image: "ghcr.io/skylabsai/workspace:fm-default"
       options: "-v=/cache:/cache:ro -v=/home/coq/.ssh:/home/coq/.ssh -v=/home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
-      env:
-        NJOBS: "16"
-        BASH_ENV: "/home/coq/.profile"
     outputs:
       compare: ${{ steps.config.outputs.compare }}
       pr_number: ${{ steps.config.outputs.pr_number }}
@@ -120,9 +119,6 @@ jobs:
     container:
       image: "ghcr.io/skylabsai/workspace:fm-default"
       options: "-v=/cache:/cache:ro -v=/home/coq/.ssh:/home/coq/.ssh -v=/home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
-      env:
-        NJOBS: "16"
-        BASH_ENV: "/home/coq/.profile"
     steps:
       - name: "Download CI files"
         uses: actions/download-artifact@v5
