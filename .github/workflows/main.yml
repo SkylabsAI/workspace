@@ -129,13 +129,6 @@ jobs:
           mv perf-data ${{ env.SCRATCHDIR }}/perf-data
           rsync -a --prune-empty-dirs --include="*/" --include="*.d" --exclude="*" _build/ ${{ env.SCRATCHDIR }}/build_vd
 
-      - name: "Skip Base Build?"
-        if: |
-          !cancelled() &&
-          needs.gen-job.outputs.compare != '1'
-        run: |
-          echo "Skipping Base Build because of pipeline flags" # TODO: mention actual flag name
-
       # TODO branches here are a problem
       - name: "Checkout Base Commits"
         uses: SkylabsAI/workspace/.github/actions/checkout_workspace@main
