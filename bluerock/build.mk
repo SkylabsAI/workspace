@@ -20,17 +20,13 @@ else
 endif
 
 NOVA_DIR = bluerock/NOVA
+CPP2V = _build/install/default/bin/cpp2v
 
 .PHONY: ast-prepare-NOVA
 ast-prepare-NOVA:
 ifeq ($(wildcard ${NOVA_DIR}),${NOVA_DIR})
-	$(Q)dune build _build/install/default/bin/cpp2v
-	$(Q)$(MAKE) -C ${NOVA_DIR} \
-		FMS_DIR=../../fmdeps \
-		PREFIX_NOVA=../../_build/default/bluerock/NOVA/build-proof \
-		PREFIX_FM=../../_build/default/fmdeps \
-		CPP2V=$${PWD}/_build/install/default/bin/cpp2v \
-		dune-ast
+	$(Q)dune build ${CPP2V}
+	$(Q)$(MAKE) -C ${NOVA_DIR} CPP2V=$${PWD}/${CPP2V} dune-ast
 else
 	@echo "Skipping AST generation for ${NOVA_DIR} (not cloned)."
 endif
