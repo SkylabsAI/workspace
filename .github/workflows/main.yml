@@ -25,12 +25,6 @@ jobs:
     container:
       image: "ghcr.io/skylabsai/workspace:fm-default"
       options: "-v=/cache:/cache:ro -v=/home/coq/.ssh:/home/coq/.ssh -v=/home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
-      # Our docker registry has read access for actions triggered by FM repositories.
-      # Hence, GITHUB_TOKEN as the password is enough to log in to the registry. GH uses it by default.
-      # The username does not matter. GH picks the triggering user by default.
-      # credentials:
-      #   username: "<anything>"
-      #   password: ${{ secrets.GITHUB_TOKEN }} # TODO: use secrets.FM_CI_TOKEN for consistency?
       env:
         NJOBS: "16"
         BASH_ENV: "/home/coq/.profile"
@@ -56,12 +50,6 @@ jobs:
     container:
       image: "ghcr.io/skylabsai/workspace:fm-default"
       options: "-v=/cache:/cache:ro -v=/home/coq/.ssh:/home/coq/.ssh -v=/home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
-      # Our docker registry has read access for actions triggered by FM repositories.
-      # Hence, GITHUB_TOKEN as the password is enough to log in to the registry. GH uses it by default.
-      # The username does not matter. GH picks the triggering user by default.
-      # credentials:
-      #   username: "<anything>"
-      #   password: ${{ secrets.GITHUB_TOKEN }} # TODO: use secrets.FM_CI_TOKEN for consistency?
       env:
         NJOBS: "16"
         BASH_ENV: "/home/coq/.profile"
