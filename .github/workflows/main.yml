@@ -8,7 +8,7 @@ env:
   SCRATCHDIR: "/tmp/scratch"
   COMMITS_JOB: "commits_job.txt"
   COMMITS_BASE: "commits_base.txt"
-  DUNE_TARGETS: "@fmdeps/all @fmdeps/runtest @psi/all @psi/runtest @bluerock/bhv/proof @bluerock/NOVA/all @bluerock/nova-interface/all"
+  DUNE_TARGETS: "@fmdeps/all @fmdeps/runtest @psi/all @psi/runtest @bluerock/bhv/proof @bluerock/NOVA/all"
   BOILERPLATE: "/home/coq/activate.inc.sh"
   CLICOLOR: "1"
   GNUMAKEFLAGS: "--no-print-directory"
