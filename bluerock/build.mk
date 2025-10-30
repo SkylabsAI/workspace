@@ -13,7 +13,7 @@ endif
 	@echo "[PIP] ${BHV_DIR}/python_requirements.txt"
 	$(Q)(cd ${BHV_DIR}; uv pip install -r python_requirements.txt)
 	@echo "[AST] ${BHV_DIR}"
-	$(Q)(cd ${BHV_DIR}; LLVM=1 BUILD_CACHING=0 SHALLOW=1 \
+	+$(Q)(cd ${BHV_DIR}; LLVM=1 BUILD_CACHING=0 SHALLOW=1 \
 		GITLAB_URL=${GITLAB_URL} uv run -- ./fm-build.py -b)
 else
 	@echo "Skipping AST generation for ${BHV_DIR} (not cloned)."
