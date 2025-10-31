@@ -11,8 +11,7 @@ runs:
   using: "composite"
   steps:
     # TODO branches here are a problem
-    - id: initialize
-      uses: SkylabsAI/workspace/.github/actions/initialize_workspace@main
+    - uses: SkylabsAI/workspace/.github/actions/initialize_workspace@main
       with:
         FM_CI_TOKEN: ${{ inputs.FM_CI_TOKEN }}
     - uses: actions/download-artifact@v5

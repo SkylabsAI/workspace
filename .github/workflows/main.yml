@@ -5,7 +5,6 @@ on:
 
 env:
   WORKDIR: "/tmp/build-dir"  # NOTE: Keep in sync with second occurrence at the bottom
-  CI_FILES_ARTIFACT: "ci-files" # Artifact name, used by initialize_workspace action
   SCRATCHDIR: "/tmp/scratch"
   COMMITS_JOB: "commits_job.txt"
   COMMITS_BASE: "commits_base.txt"
@@ -34,19 +33,7 @@ jobs:
     outputs:
       compare: ${{ steps.config.outputs.compare }}
     steps:
-      # When running from workspace we are forced to explicitly check out
-      # workspace in order to run actions within workspace from the file system
-      - name: "Checkout workspace (from workspace)"
-        if: github.repository == 'SkylabsAI/workspace'
-        uses: actions/checkout@v5
-      - name: "Initialize workspace (from workspace)"
-        if: github.repository == 'SkylabsAI/workspace'
-        uses: ./.github/actions/initialize_workspace
-        with:
-          FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
-      - name: "Initialize workspace (from elsewhere)"
-        if: github.repository != 'SkylabsAI/workspace'
-        uses: SkylabsAI/workspace/.github/actions/initialize_workspace@main
+      - uses: SkylabsAI/workspace/.github/actions/initialize_workspace@main
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
       - id: config
@@ -79,17 +66,17 @@ jobs:
       image: "ghcr.io/skylabsai/workspace:fm-default"
       options: "-v /cache:/cache:ro -v /home/coq/.ssh:/home/coq/.ssh -v /home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
     steps:
-      - name: "Download CI files"
-        uses: actions/download-artifact@v5
-        with:
-          name: ${{ env.CI_FILES_ARTIFACT }}
+      # TODO branches here are a problem
       - name: "Prepare Workspace"
-        uses: ./actions/prepare_workspace
+        uses: SkylabsAI/workspace/.github/actions/prepare_workspace@main
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
+      # TODO branches here are a problem
       - name: "Checkout Job Commits"
-        uses: ./actions/checkout_workspace
+        uses: SkylabsAI/workspace/.github/actions/checkout_workspace@main
       - id: build-job
+        if: |
+          !cancelled()
         name: "Opam Install"
         run: |
           source ${{ env.BOILERPLATE }}
@@ -110,18 +97,15 @@ jobs:
         NJOBS: "16"
         BASH_ENV: "/home/coq/.profile"
     steps:
-      - name: "Download CI files"
-        uses: actions/download-artifact@v5
-        with:
-          name: ${{ env.CI_FILES_ARTIFACT }}
+      # TODO branches here are a problem
       - name: "Prepare Workspace"
-        uses: ./actions/prepare_workspace
+        uses: SkylabsAI/workspace/.github/actions/prepare_workspace@main
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
 
       # TODO branches here are a problem
       - name: "Checkout Job Commits"
-        uses: ./actions/checkout_workspace
+        uses: SkylabsAI/workspace/.github/actions/checkout_workspace@main
 
       - name: "Create Directory structure for dune"
         run: |
@@ -178,7 +162,7 @@ jobs:
 
       # TODO branches here are a problem
       - name: "Checkout Base Commits"
-        uses: ./actions/checkout_workspace
+        uses: SkylabsAI/workspace/.github/actions/checkout_workspace@main
         if: |
           !cancelled() &&
           needs.gen-job.outputs.compare == '1'
@@ -224,7 +208,7 @@ jobs:
       #### PERF ANALYSIS ####
       # TODO branches here are a problem
       - name: "Checkout Job Commits (again)"
-        uses: ./actions/checkout_workspace
+        uses: SkylabsAI/workspace/.github/actions/checkout_workspace@main
         if: |
           !cancelled() &&
           needs.gen-job.outputs.compare == '1'
