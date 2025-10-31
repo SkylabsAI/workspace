@@ -10,7 +10,7 @@ MAX="21.0.0"
 RECOMMENDED="19.*.*"
 
 print_ver() {
-  VER="$(clang --version | grep "clang version" | cut -d' ' -f3)"
+  VER="$(clang --version | grep "clang version" | sed -r 's/^.*clang version ([0-9.]+).*$/\1/')"
   if ! [[ "${VER}" =~ ([^\.]*)\.([^\.]*)\.([^\.]*) ]]; then
     >&2 echo "Error: could not parse the output of 'clang --version'."
     >&2 clang --version
