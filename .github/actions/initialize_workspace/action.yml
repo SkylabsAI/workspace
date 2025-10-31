@@ -25,12 +25,10 @@ runs:
         ref: ${{ github.repository == 'SkylabsAI/workspace' && github.sha || 'main' }}
         token: ${{ inputs.FM_CI_TOKEN }}
         fetch-depth: 0
-    - name: "Copy workspace git repo"
+    - name: "Copy workspace Git Repo"
       shell: sh
       run: |
         cp -aR workspace_checkout ${{ env.WORKDIR }}
-        mkdir -p /home/coq/_work/workspace/workspace
-        cp -aR workspace_checkout/* /home/coq/_work/workspace/workspace/
     - name: "Fix HOME"
       shell: sh
       run: |
@@ -48,11 +46,3 @@ runs:
       shell: sh
       run: |
         echo 'ulimit -S -s 32768; source ~/.pyenv/bin/activate; eval $(opam env)' > ${{ env.BOILERPLATE }}
-    - id: artifact
-      name: "Upload actions and workflows"
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.CI_FILES_ARTIFACT }}
-        path: |
-          workspace_checkout/.github/actions/*
-          workspace_checkout/.github/workflows/*
