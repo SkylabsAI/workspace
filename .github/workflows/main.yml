@@ -41,6 +41,19 @@ jobs:
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
 
+  workspace-success:
+    needs: [opam-build, full-build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Check successes"
+        shell: bash
+        run: |
+          echo "Checking that opam-build succeeded"
+          ${{ needs.opam-build.result == 'success' && 'true' || 'false' }}
+          echo "Checking that full-build succeeded"
+          ${{ needs.full-build.result == 'success' && 'true' || 'false' }}
+
   opam-build:
     needs: gen-job
     defaults:
