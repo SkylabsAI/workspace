@@ -22,7 +22,8 @@ ide-prepare: _CoqProject
 FORCE:
 
 _CoqProject: fmdeps/BRiCk/scripts/coq_project_gen/gen-_CoqProject-dune.sh FORCE
-	$(Q)$< > $@ || { rm -f $@; exit 1; }
+	$(Q)uv run --with sexpdata --python 3.11 --quiet -- $< > $@ \
+		|| { rm -f $@; exit 1; }
 
 .PHONY: stage1
 stage1: ide-prepare | ast-prepare-bluerock
