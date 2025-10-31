@@ -4,9 +4,9 @@
 (subdir build-list
  (rule
   (action
-   (copy build-list.py make-alias)))
+   (copy build-list.py build-list)))
  (rule
   (target dune.inc)
   (deps (glob_files *.yml))
   (action
-   (run ./make-alias -o %{target} %{deps}))))
+   (run ./build-list -o %{target} %{deps}))))
