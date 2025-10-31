@@ -1,0 +1,10 @@
+(subdir dyn
+ (dynamic_include ../build-list/dune.inc))
+(subdir build-list
+ (rule
+   (action (copy build-list.py make-alias)))
+ (rule
+   (target dune.inc)
+   (deps (glob_files *.yml))
+   (action
+     (run ./make-alias -o %{target} %{deps}))))
