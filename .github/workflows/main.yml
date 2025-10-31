@@ -49,6 +49,14 @@ jobs:
         uses: SkylabsAI/workspace/.github/actions/initialize_workspace@main
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
+      - id: artifact
+        name: "Upload actions and workflows"
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CI_FILES_ARTIFACT }}
+          path: |
+            workspace_checkout/.github/actions/*
+            workspace_checkout/.github/workflows/*
       - id: config
         uses: ./workspace_checkout/.github/actions/config
         with:
