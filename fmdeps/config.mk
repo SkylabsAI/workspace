@@ -15,7 +15,6 @@ FMDEPS += SkylabsAI/skylabs-fm:main:skylabs-fm/:owned
 
 # Infrastructure / CI repositories.
 FMDEPS += SkylabsAI/fm-ci:main:fm-ci/:owned
-FMDEPS += SkylabsAI/fm-workspace:main:fm-workspace/:owned
 
 # Vendored repositories.
 FMDEPS += SkylabsAI/elpi:skylabs-master:vendored/elpi/:upstream
