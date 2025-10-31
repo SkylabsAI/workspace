@@ -9,6 +9,7 @@ permissions:
 
 env:
   WORKDIR: "/tmp/build-dir"  # NOTE: Keep in sync with second occurrence at the bottom
+  CI_FILES_ARTIFACT: "ci-files" # Artifact name, used by [gen-job] and all jobs that depend on it
   SCRATCHDIR: "/tmp/scratch"
   COMMITS_JOB: "commits_job.txt"
   COMMITS_BASE: "commits_base.txt"
@@ -37,13 +38,34 @@ jobs:
     outputs:
       compare: ${{ steps.config.outputs.compare }}
     steps:
-      - uses: SkylabsAI/workspace/.github/actions/initialize_workspace@main
+      # When running from workspace we are forced to explicitly check out
+      # workspace in order to run actions within workspace from the file system
+      - name: "Checkout workspace (from workspace)"
+        if: github.repository == 'SkylabsAI/workspace'
+        uses: actions/checkout@v5
+      - name: "Initialize workspace (from workspace)"
+        if: github.repository == 'SkylabsAI/workspace'
+        uses: ./.github/actions/initialize_workspace
+        with:
+          FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
+      - name: "Initialize workspace (from elsewhere)"
+        if: github.repository != 'SkylabsAI/workspace'
+        uses: SkylabsAI/workspace/.github/actions/initialize_workspace@main
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
       - id: config
         uses: ./workspace_checkout/.github/actions/config
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
+      - id: artifact
+        name: "Upload actions and workflows"
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CI_FILES_ARTIFACT }}
+          path: |
+            workspace_checkout/.github/actions/*
+            workspace_checkout/.github/workflows/*
+
 
   workspace-success:
     needs: [opam-build, full-build]
@@ -70,17 +92,17 @@ jobs:
       image: "ghcr.io/skylabsai/workspace:fm-default"
       options: "-v /cache:/cache:ro -v /home/coq/.ssh:/home/coq/.ssh -v /home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
     steps:
-      # TODO branches here are a problem
+      - name: "Download CI files"
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.CI_FILES_ARTIFACT }}
       - name: "Prepare Workspace"
-        uses: SkylabsAI/workspace/.github/actions/prepare_workspace@main
+        uses: ./actions/prepare_workspace
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
-      # TODO branches here are a problem
       - name: "Checkout Job Commits"
-        uses: SkylabsAI/workspace/.github/actions/checkout_workspace@main
+        uses: ./actions/checkout_workspace
       - id: build-job
-        if: |
-          !cancelled()
         name: "Opam Install"
         run: |
           source ${{ env.BOILERPLATE }}
@@ -101,15 +123,18 @@ jobs:
         NJOBS: "16"
         BASH_ENV: "/home/coq/.profile"
     steps:
-      # TODO branches here are a problem
+      - name: "Download CI files"
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.CI_FILES_ARTIFACT }}
       - name: "Prepare Workspace"
-        uses: SkylabsAI/workspace/.github/actions/prepare_workspace@main
+        uses: ./actions/prepare_workspace
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
 
       # TODO branches here are a problem
       - name: "Checkout Job Commits"
-        uses: SkylabsAI/workspace/.github/actions/checkout_workspace@main
+        uses: ./actions/checkout_workspace
 
       - name: "Create Directory structure for dune"
         run: |
@@ -166,7 +191,7 @@ jobs:
 
       # TODO branches here are a problem
       - name: "Checkout Base Commits"
-        uses: SkylabsAI/workspace/.github/actions/checkout_workspace@main
+        uses: ./actions/checkout_workspace
         if: |
           !cancelled() &&
           needs.gen-job.outputs.compare == '1'
@@ -212,7 +237,7 @@ jobs:
       #### PERF ANALYSIS ####
       # TODO branches here are a problem
       - name: "Checkout Job Commits (again)"
-        uses: SkylabsAI/workspace/.github/actions/checkout_workspace@main
+        uses: ./actions/checkout_workspace
         if: |
           !cancelled() &&
           needs.gen-job.outputs.compare == '1'
@@ -255,7 +280,8 @@ jobs:
       - name: "Post Performance Analysis Comment"
         if: |
           !cancelled() &&
-          needs.gen-job.outputs.compare == '1'
+          needs.gen-job.outputs.compare == '1' &&
+          needs.gen-job.outputs.pr_number != 0
         run: |
           # create json-encoded file
           uv run python3 -c 'import json, sys; print(json.dumps({"body": sys.stdin.read()}))' \
@@ -267,7 +293,7 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.number }}/comments \
+            https://api.github.com/repos/${{ github.repository }}/issues/${{ needs.gen-job.outputs.pr_number }}/comments \
             -d @${{ env.SCRATCHDIR }}/perf_analysis_comment.json
 
 

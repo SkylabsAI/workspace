@@ -328,7 +328,7 @@ class ReposData:
         # all other repos get the default branch as a fallback
         if trigger.event_type == EventType.PULL_REQUEST and trigger.labels.same_branch:
             # if same-branch is set, the trigger branch name is our first choice
-            nondefault_pr_base = await trigger.non_default_trigger_pr_base()
+            nondefault_pr_base = trigger.non_default_trigger_pr_base()
             if nondefault_pr_base:
                 # if the base of the trigger PR is not the repo's default branch, the base becomes a valid second choice for all other repos
                 return [trigger.branch, nondefault_pr_base, repo.default_branch]
@@ -385,7 +385,7 @@ class ReposData:
         has_job = job_ref != None and job_branch != None
         if not has_job:
             logger.info(f"{repo.github_path}: Repo has been deleted.")
-        nondefault_pr_base = await trigger.non_default_trigger_pr_base()
+        nondefault_pr_base = trigger.non_default_trigger_pr_base()
         # Up- and downstream repos that participate OR trigger in a same-branch pipeline need special handling
         if trigger.labels.same_branch and repo.mode != RepoMode.OWNED and job_branch==trigger.branch:
             base_ref = await self.pr_base_ref(repo)
@@ -432,7 +432,7 @@ class ReposData:
     async def check_invariants(self, trigger, repos):
         fail = False
         same_branch_repos = [r for r in repos if self[r].job_branch == trigger.branch]
-        if trigger.labels.same_branch and await trigger.non_default_trigger_pr_base():
+        if trigger.labels.same_branch and trigger.non_default_trigger_pr_base():
             missing_prs : list[Repo] = []
             wrong_targets : dict[Repo,PRData] = {}
             for repo in same_branch_repos:
@@ -554,10 +554,6 @@ class Trigger:
     def is_trigger_repo(self, other_repo):
         return self.repo == other_repo
 
-    @async_cached_property
-    async def pr_obj(self):
-        return await DATA.pr(self.repo)
-
     async def backfill_labels(self):
         if self.labels != None:
             return
@@ -565,9 +561,9 @@ class Trigger:
             logger.warning(f"Neither labels nor a PR were given via cmdline arguments. Assuming empty label set. Use --trigger-labels='' to silence this warning.")
             self.labels = Labels.defaults()
             return
-        self.labels = (await self.pr_obj).labels
+        self.labels = self.pr.labels
 
-    async def non_default_trigger_pr_base(self):
+    def non_default_trigger_pr_base(self):
         if self.pr == None:
             return None
         if self.pr.base_ref and self.repo.default_branch != self.pr.base_ref:
@@ -591,8 +587,6 @@ def add_common_args(parser):
     parser.add_argument("--trigger-commit", help="The commit that triggered this pipeline", required=True, type=str)
     parser.add_argument("--trigger-labels", help="Labels of the triggering PR. Default: Retrieved via Github API.", type=Labels.of_str)
     parser.add_argument("--github-token", type=(lambda x: GH.set_auth(x)), required=True)
-    parser.add_argument("--output-file-job", type=str, default="job.txt")
-    parser.add_argument("--output-file-base", type=str, default="base.txt")
 
 class Workspace():
     _singleton = None
@@ -645,6 +639,10 @@ def checkout_workspace(*args):
 
 async def make_config(parser, context, args):
     add_common_args(parser)
+    # custom args for this command
+    parser.add_argument("--output-file-job", type=str, default="job.txt")
+    parser.add_argument("--output-file-base", type=str, default="base.txt")
+    parser.add_argument("--output-file-github", help="Optional file name to which to append var=value pairs. Variables are: [compare='1' (opt.), pr: int (opt.)]", type=str, required=False)
     # add_loop_args(parser)
     args = parser.parse_args(args)
     repos = Repos.make()
@@ -656,6 +654,12 @@ async def make_config(parser, context, args):
 
     await DATA.check_invariants(trigger, repos.repos)
 
+    github_output = open(args.output_file_github, "a") if args.output_file_github != None else None
+
+    trigger_pr = trigger.pr
+    if github_output != None and trigger_pr != None:
+        github_output.write(f"pr={trigger_pr.number}\n")
+
     if trigger.labels.compare:
         base = await DATA.workspace_base_ref(trigger)
         workspace_git = git.Repo(Workspace().repo.dir_path)
@@ -666,6 +670,11 @@ async def make_config(parser, context, args):
         await DATA.compute_base_refs(trigger, repos.repos)
         DATA.print()
         DATA.output_base_refs(args.output_file_base, repos.repos)
+
+        if github_output != None:
+            github_output.write("compare=1\n")
+
+
 
     if GH.g != None and GH.g.rate_limit:
         logger.info(GH.g.rate_limit)
