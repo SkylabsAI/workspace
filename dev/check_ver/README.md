@@ -5,7 +5,7 @@ Template
 --------
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
 
 PROG="prog" # Program name.
 URL="https://prog.html/install/" # Installation instructions.
