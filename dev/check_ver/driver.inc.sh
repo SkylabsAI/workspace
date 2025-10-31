@@ -6,7 +6,7 @@ set -euf -o pipefail
 
 # Check that the expected variables are defined and non-empty.
 for VAR in PROG URL MIN; do
-  if [[ -v ${!VAR} ]]; then
+  if [[ ! -v ${VAR} ]] ; then
     echo "Bug: variable ${VAR} not defined."
     exit 2
   fi
