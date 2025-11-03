@@ -10,7 +10,6 @@ FMDEPS += SkylabsAI/auto-docs:main:auto-docs/:owned
 FMDEPS += SkylabsAI/auto:main:auto/:owned
 FMDEPS += SkylabsAI/brick-libcpp:main:brick-libcpp/:owned
 FMDEPS += SkylabsAI/fm-tools:main:fm-tools/:owned
-FMDEPS += SkylabsAI/fm-website:main:website/:owned
 FMDEPS += SkylabsAI/skylabs-fm:main:skylabs-fm/:owned
 
 # Infrastructure / CI repositories.
