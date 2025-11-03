@@ -3,10 +3,7 @@
 
 (subdir build-list
  (rule
-  (action
-   (copy build-list.py build-list)))
- (rule
   (target dune.inc)
-  (deps (glob_files *.yml))
+  (deps (:yml (glob_files *.yml)) (:script (file build-list.py)))
   (action
-   (run ./build-list -o %{target} %{deps}))))
+   (run ./build-list.py -o %{target} %{yml}))))
