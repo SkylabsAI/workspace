@@ -1,0 +1,9 @@
+(subdir dyn
+ (dynamic_include ../build-list/dune.inc))
+
+(subdir build-list
+ (rule
+  (target dune.inc)
+  (deps (:yml (glob_files *.yml)) (:script (file build-list.py)))
+  (action
+   (run ./build-list.py -o %{target} %{yml}))))
