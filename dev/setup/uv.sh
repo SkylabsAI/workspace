@@ -5,7 +5,7 @@
 
 set -euf -o pipefail
 
-if [[ -d .venv ]]; then
+if [[ -n $(uv run -- bash -c 'echo $VIRTUAL_ENV') ]]; then
   echo "The main Python virtual environment is already setup."
   echo "Found at: $(realpath .venv)"
   exit 0
