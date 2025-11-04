@@ -31,7 +31,7 @@ def node(tag, args):
 def parse_target(fn):
     alias = False
     if fn.startswith('@@'):
-        fn = fn[1:]
+        fn = fn[2:]
         alias = '@@'
     elif fn.startswith('@'):
         fn = fn[1:]
@@ -43,16 +43,16 @@ def make_alias_target(tgt_name, tgts, relative_to):
     tgts = tgts or []
     for tgt in tgts:
         (alias, tgt) = parse_target(tgt)
-        tgt = os.path.relpath(tgt, relative_to)
         tgt = replace_extension(tgt, is_alias=alias)
+        tgt_rel_path = os.path.relpath(tgt, relative_to)
         if tgt:
             if alias:
-                deps.append(node('alias', [alias + tgt]))
+                deps.append(node('alias', [alias + tgt_rel_path]))
             elif os.path.isdir(tgt):
                 tgt = os.path.join(tgt, '*')
-                deps.append(node('glob_files_rec', [tgt]))
+                deps.append(node('glob_files_rec', [tgt_rel_path]))
             else:
-                deps.append(node('file', [tgt]))
+                deps.append(node('file', [tgt_rel_path]))
 
     name = node('name', [tgt_name])
     deps = node('deps', deps)
