@@ -37,6 +37,7 @@ jobs:
         BASH_ENV: "/home/coq/.profile"
     outputs:
       compare: ${{ steps.config.outputs.compare }}
+      pr_number: ${{ steps.config.outputs.pr_number }}
     steps:
       # When running from workspace we are forced to explicitly check out
       # workspace in order to run actions within workspace from the file system
@@ -281,7 +282,7 @@ jobs:
         if: |
           !cancelled() &&
           needs.gen-job.outputs.compare == '1' &&
-          needs.gen-job.outputs.pr_number != 0
+          needs.gen-job.outputs.pr_number != ''
         run: |
           # create json-encoded file
           uv run python3 -c 'import json, sys; print(json.dumps({"body": sys.stdin.read()}))' \
