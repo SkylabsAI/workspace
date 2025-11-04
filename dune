@@ -1,9 +1,9 @@
 (subdir dyn
- (dynamic_include ../build-list/dune.inc))
+ (dynamic_include ../dev/build-list/dune.inc))
 
-(subdir build-list
+(subdir dev/build-list
  (rule
   (target dune.inc)
-  (deps (:yml (glob_files *.yml)) (:script (file build-list.py)))
+  (deps (:yml (glob_files *.yml)) (:script build-list.py))
   (action
-   (run ./build-list.py -o %{target} %{yml}))))
+   (system "uv run --with pyyaml --with sexpdata --python 3.11 --quiet %{script} -o %{target} %{yml} --relative-to='../../dyn' --root=../.."))))
