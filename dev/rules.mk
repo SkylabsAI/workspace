@@ -11,7 +11,14 @@ DEV_PROGS = clang opam rust uv
 $(foreach prog,$(DEV_PROGS),$(eval $(call check_ver_target,$(prog))))
 
 .PHONY: dev-check-ver
-dev-check-ver: $(DEV_CHECK_VER_TARGETS)
+dev-check-ver: $(DEV_CHECK_VER_TARGETS) dev-check-ver-sed
+
+.PHONY: dev-check-ver-sed
+# Reject systems where `sed` is not GNU `sed` and `gsed` is not available.
+# On accepted systems, `SED` can be found via `(which gsed || which sed) 2> /dev/null`,
+# which is what we use in most places.
+dev-check-ver-sed:
+	@source fmdeps/BRiCk/scripts/locate-sed.inc.sh; echo "Found GNU sed as $${SED}"
 
 # Setting up the development environment.
 
