@@ -76,7 +76,7 @@ jobs:
   # MR merging can require this check to succeed, to depend on all of CI.
   # MAINTENANCE NOTE: Must depend on all "actual" jobs
   workspace-success:
-    needs: [opam-build, full-build, python-build]
+    needs: [opam-build, full-build, python-build, build-brick-docs]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -89,6 +89,8 @@ jobs:
           ${{ needs.full-build.result == 'success' && 'true' || 'false' }}
           echo "Checking that python-build succeeded"
           ${{ needs.python-build.result == 'success' && 'true' || 'false' }}
+          echo "Checking that build-brick-docs succeeded"
+          ${{ needs.build-brick-docs.result == 'success' && 'true' || 'false' }}
 
   # Regular jobs [should] follow the template of `opam-build` up to
   # `checkout_workspace`, and then add their payload.
@@ -238,6 +240,43 @@ jobs:
           export PATH=$(pwd)/_build/install/default/bin:$PATH
           uv --directory ${{ matrix.project-dir }} run task ${{ matrix.task }}
 
+  build-brick-docs:
+    name: "BRiCk documentation"
+    needs: gen-job
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.WORKDIR }}
+    runs-on:
+      group: FM
+    container:
+      image: "ghcr.io/skylabsai/workspace:fm-default"
+      options: "-v /cache:/cache:ro -v /home/coq/.ssh:/home/coq/.ssh -v /home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
+      env:
+        NJOBS: "16"
+        BASH_ENV: "/home/coq/.profile"
+    steps:
+      - name: "Download CI files"
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.CI_FILES_ARTIFACT }}
+      - name: "Prepare Workspace"
+        uses: ./actions/prepare_workspace
+        with:
+          FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
+      - name: "Checkout Job Commits"
+        uses: ./actions/checkout_workspace
+      - id: build-brick-docs-job
+        name: "Build BRiCk docs"
+        run: |
+          source ${{ env.BOILERPLATE }}
+          cd fmdeps/BRiCk
+          make -j ${NJOBS} doc
+          mv rocq-bluerock-brick/doc/sphinx/_build/html ${{ env.SCRATCHDIR }}/html
+      - name: "Upload static files as artifact"
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.SCRATCHDIR }}/html
 
   # Unlike opam-build, this job invokes checkout_workspace twice not once.
   full-build:
