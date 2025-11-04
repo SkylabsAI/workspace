@@ -5,6 +5,6 @@
 # - MODE: either "upstream", "owned", or "downstream".
 
 PSIDEPS += SkylabsAI/protos:main:protos/:owned
-PSIDEPS += SkylabsAI/psi-prover:main:backend/:owned
+PSIDEPS += SkylabsAI/psi-verifier:main:backend/:owned
 PSIDEPS += SkylabsAI/psi-verifier-ide:main:ide/:owned
 PSIDEPS += SkylabsAI/psi_PROVER.data:main:data/:owned
