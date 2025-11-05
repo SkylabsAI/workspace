@@ -413,13 +413,13 @@ jobs:
             -d @${{ env.SCRATCHDIR }}/perf_analysis_comment.json
 
 
-      - name: "Upload Artifacts"
+      - name: "Upload Summary Artifacts"
         if: |
           !cancelled() &&
           github.event_name != 'push'
         uses: actions/upload-artifact@v4
         with:
-          name: "reports"
+          name: "summary-reports"
           if-no-files-found: ignore
           path: |
             ${{ env.SCRATCHDIR }}/commits.txt
@@ -438,3 +438,14 @@ jobs:
             ${{ env.SCRATCHDIR }}/hint-data_ref.csv
             ${{ env.SCRATCHDIR }}/perf_summary_ref.csv
             ${{ env.SCRATCHDIR }}/gl-code-quality-report.json
+
+      # - name: "Upload Detailed Performance Artifacts"
+      #   if: |
+      #     !cancelled() &&
+      #     github.event_name != 'push'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: "performance-reports"
+      #     if-no-files-found: ignore
+      #     path: |
+      #       ${{ env.SCRATCHDIR }}/perf-report
