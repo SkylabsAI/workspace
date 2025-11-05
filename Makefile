@@ -62,8 +62,25 @@ define common_target
 $1: $(patsubst %,%-$1,${SUBREPO_DIRS})
 endef
 
-COMMON_TARGETS = clone lightweight-clone pull nuke peek
+COMMON_TARGETS = clone lightweight-clone nuke peek
 $(foreach t,$(COMMON_TARGETS),$(eval $(call common_target,$(t))))
+
+.PHONY: workspace-fetch
+workspace-fetch:
+	@echo "Fetching at the workspace root."
+	$(Q)git fetch --all --quiet
+
+.PHONY: fetch
+fetch: workspace-fetch $(patsubst %,%-fetch,${SUBREPO_DIRS})
+
+.PHONY: workspace-pull
+workspace-pull:
+	@echo "Pulling at the workspace root."
+	$(Q)git pull --rebase
+
+.PHONY: pull
+pull: workspace-pull
+	+$(Q)$(MAKE) --no-print-directory $(patsubst %,%-pull,${SUBREPO_DIRS})
 
 .PHONY: workspace-show-config
 workspace-show-config:
