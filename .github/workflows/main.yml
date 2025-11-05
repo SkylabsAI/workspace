@@ -437,3 +437,4 @@ jobs:
             ${{ env.SCRATCHDIR }}/hint_data_diff.html
             ${{ env.SCRATCHDIR }}/hint-data_ref.csv
             ${{ env.SCRATCHDIR }}/perf_summary_ref.csv
+            ${{ env.SCRATCHDIR }}/gl-code-quality-report.json
