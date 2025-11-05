@@ -20,39 +20,42 @@ def replace_extension(fn, is_alias):
     elif ext in ['.cpp','.hpp']:
         # name = os.path.join('_build', name)
         return name + '_' + ext[1:] + '.vo'
-    elif '@' in name:
-        return name
-    elif os.path.isdir(name):
-        return name
+    else:
+        return fn
 
 def node(tag, args):
     return [sexpdata.Symbol(tag)] + args
 
 def parse_target(fn):
-    alias = False
+    tgt_type = False
+    (_, ext) = os.path.splitext(fn)
     if fn.startswith('@@'):
-        fn = fn[1:]
-        alias = '@@'
+        fn = fn[2:]
+        tgt_type = '@@'
     elif fn.startswith('@'):
         fn = fn[1:]
-        alias = '@'
-    return (alias, os.path.realpath(fn))
+        tgt_type = '@'
+    elif '*' in fn:
+        tgt_type = 'pattern'
+    else:
+        tgt_type = 'file'
+    return (tgt_type, os.path.realpath(fn))
 
 def make_alias_target(tgt_name, tgts, relative_to):
     deps = []
     tgts = tgts or []
-    for tgt in tgts:
-        (alias, tgt) = parse_target(tgt)
-        tgt = os.path.relpath(tgt, relative_to)
-        tgt = replace_extension(tgt, is_alias=alias)
-        if tgt:
-            if alias:
-                deps.append(node('alias', [alias + tgt]))
-            elif os.path.isdir(tgt):
-                tgt = os.path.join(tgt, '*')
-                deps.append(node('glob_files_rec', [tgt]))
-            else:
-                deps.append(node('file', [tgt]))
+    for init_tgt in tgts:
+        (tgt_type, tgt) = parse_target(init_tgt)
+        pwd = os.path.realpath('.')
+        tgt = replace_extension(tgt, is_alias=tgt_type in ['@','@@'])
+        tgt_rel_path = os.path.relpath(tgt, relative_to)
+        if tgt_type in ['@', '@@']:
+            deps.append(node('alias', [alias + tgt_rel_path]))
+        elif tgt_type == 'pattern':
+            tgt = os.path.join(tgt, '*')
+            deps.append(node('glob_files_rec', [tgt_rel_path]))
+        else:
+            deps.append(node('file', [tgt_rel_path]))
 
     name = node('name', [tgt_name])
     deps = node('deps', deps)
