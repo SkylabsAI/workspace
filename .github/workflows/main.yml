@@ -297,8 +297,7 @@ jobs:
           find _build/ -name '*.vo'| sort | xargs md5sum > ${{ env.SCRATCHDIR }}/md5sums.txt
           dune exec -- globfs.extract-all ${NJOBS} _build/default
           # echo -e "\e[0Ksection_start:`date +%s`:section_9[collapsed=true]\r\e[0KGenerate code quality report"
-          (cd _build/default; dune exec -- coqc-perf.report .) | tee -a coq_codeq.log
-          cat coq_codeq.log | dune exec -- coqc-perf.code-quality-report > ${{ env.SCRATCHDIR }}/gl-code-quality-report.json || true
+          (cd _build/default; dune exec -- coqc-perf.report .) > ${{ env.SCRATCHDIR }}/code-quality-job.txt
           # echo -e "\e[0Ksection_end:`date +%s`:section_9\r\e[0K"
           dune exec -- coqc-perf.extract-all _build/default perf-data
           dune exec -- hint-data.extract-all ${NJOBS} perf-data
@@ -345,6 +344,7 @@ jobs:
           # Extract data.
           find _build/ -name '*.vo'| sort | xargs md5sum > ${{ env.SCRATCHDIR }}/md5sums_ref.txt
           dune exec -- globfs.extract-all ${NJOBS} _build/default
+          (cd _build/default; dune exec -- coqc-perf.report .) > ${{ env.SCRATCHDIR }}/code-quality-base.txt
           dune exec -- coqc-perf.extract-all _build/default perf-data
           dune exec -- hint-data.extract-all ${NJOBS} perf-data
           du -hs _build
@@ -374,9 +374,12 @@ jobs:
           dune exec -- coqc-perf.summary-diff --no-colors --instr-threshold 1 --csv perf-data_ref/perf_summary.csv perf-data/perf_summary.csv > ${{ env.SCRATCHDIR }}/perf_analysis.csv
           dune exec -- coqc-perf.summary-diff --no-colors --instr-threshold 1 --gitlab --diff-base-url "https://skylabs_ai.gitlab.io/-/FM/fm-ci/-/jobs/${CI_JOB_ID}/artifacts/perf-report" perf-data_ref/perf_summary.csv perf-data/perf_summary.csv > ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md
 
+          echo "# Performance Report" >> $GITHUB_STEP_SUMMARY
+
           echo "Performance summary for ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" > ${{ env.SCRATCHDIR }}/perf_analysis_comment.md
           echo "" >> ${{ env.SCRATCHDIR }}/perf_analysis_comment.md
           dune exec -- coqc-perf.summary-diff --no-colors --instr-threshold 1 --github perf-data_ref/perf_summary.csv perf-data/perf_summary.csv | tee | tee -a ${{ env.SCRATCHDIR }}/perf_analysis_comment.md >> $GITHUB_STEP_SUMMARY
+          echo -e "\n" >> $GITHUB_STEP_SUMMARY
 
           dune exec -- coqc-perf.html-diff-all perf-data_ref perf-data ${{ env.SCRATCHDIR }}/perf-report
           # Adding hint data diff
@@ -392,6 +395,10 @@ jobs:
           fi
           echo -e '\n</details>\n' >> ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md
           # python3 support/fm-perf/post_fm_perf.py --access-token ${PROOF_PERF_TOKEN} --project-id 74911021 --mr-id 3913 -f ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md --pipe-url "https://gitlab.com/skylabs_ai/FM/auto/-/pipelines/2116778517"
+
+          # Code Quality diff
+          dune exec -- coqc-perf.code-quality-diff ${{ env.SCRATCHDIR }}/code-quality-base.txt  ${{ env.SCRATCHDIR }}/code-quality-job.txt >> $GITHUB_STEP_SUMMARY || true
+          echo -e "\n" >> $GITHUB_STEP_SUMMARY
 
       - name: "Post Performance Analysis Comment"
         if: |
