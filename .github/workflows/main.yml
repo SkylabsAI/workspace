@@ -55,6 +55,7 @@ jobs:
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
       - id: config
+        name: "Generate job config"
         uses: ./workspace_checkout/.github/actions/config
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
