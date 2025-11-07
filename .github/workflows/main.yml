@@ -200,7 +200,7 @@ jobs:
             for PROJECT_DIR in $(cat todo_${{ env.PYTHON_TOOL }}); do
               echo "::group::Running ${{ env.PYTHON_TOOL}} in $PROJECT_DIR"
               uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }} check \
-                || (echo $PROJECT_DIR >> fail_${{ PYTHON_TOOL }})
+                || (echo $PROJECT_DIR >> fail_${{ env.PYTHON_TOOL }})
               echo "::endgroup::"
             done
             if [[ -s "fail_${{ env.PYTHON_TOOL }}" ]]; then
@@ -222,7 +222,7 @@ jobs:
             for PROJECT_DIR in $(cat todo_${{ env.PYTHON_TOOL }}); do
               echo "::group::Running ${{ env.PYTHON_TOOL}} in $PROJECT_DIR"
               uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }} \
-                || (echo $PROJECT_DIR >> fail_${{ PYTHON_TOOL }})
+                || (echo $PROJECT_DIR >> fail_${{ env.PYTHON_TOOL }})
               echo "::endgroup::"
             done
             if [[ -s "fail_${{ env.PYTHON_TOOL }}" ]]; then
@@ -242,11 +242,15 @@ jobs:
           source ${{ env.BOILERPLATE }}
           if [[ -s "todo_${{ env.PYTHON_TOOL }}" ]]; then
             for PROJECT_DIR in $(cat todo_${{ env.PYTHON_TOOL }}); do
-              echo "::group::Running ${{ env.PYTHON_TOOL}} in $PROJECT_DIR"
               if [[ -d "${PROJECT_DIR}/tests" ]]; then
+                echo "::group::Running ${{ env.PYTHON_TOOL}} in $PROJECT_DIR"
                 uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }} tests/ \
-                  || (echo $PROJECT_DIR >> fail_${{ PYTHON_TOOL }})
-              echo "::endgroup::"
+                  || (echo $PROJECT_DIR >> fail_${{ env.PYTHON_TOOL }})
+                echo "::endgroup::"
+              else
+                echo "Failed to find tests/ directory in ${PROJECT_DIR}"
+                echo $PROJECT_DIR >> fail_${{ env.PYTHON_TOOL }}
+              fi
             done
             if [[ -s "fail_${{ env.PYTHON_TOOL }}" ]]; then
               echo "${{ env.PYTHON_TOOL }} Failures:"
