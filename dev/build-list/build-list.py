@@ -57,7 +57,7 @@ def make_alias_target(tgt_name, tgts, relative_to):
         tgt = replace_extension(tgt, is_alias=tgt_type in ['@','@@'])
         tgt_rel_path = os.path.relpath(tgt, relative_to)
         if tgt_type in ['@', '@@']:
-            deps.append(node('alias', [alias + tgt_rel_path]))
+            deps.append(node('alias', [tgt_type + tgt_rel_path]))
         elif tgt_type == 'pattern':
             tgt = os.path.join(tgt, '*')
             deps.append(node('glob_files_rec', [tgt_rel_path]))
