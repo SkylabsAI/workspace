@@ -32,6 +32,7 @@ runs:
                    --trigger-default-branch='${{ github.event.repository.default_branch }}' \
                    --trigger-branch='${{ github.head_ref || github.ref_name }}' --trigger-commit='${{ github.sha }}' \
                    --github-token='${{ inputs.FM_CI_TOKEN }}'" \
+                   --log-level='WARN'
           | tee -a "$GITHUB_OUTPUT"
         echo ci-script="uv --project dev/ci/gen/ run dev/ci/gen/ci.py" \
           | tee -a "$GITHUB_OUTPUT"

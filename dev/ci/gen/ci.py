@@ -25,10 +25,7 @@ log_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
 
 
 def reconfigure_logging(level):
-    logging.basicConfig(level=logging.INFO, format=log_format, force=True)
-
-
-reconfigure_logging(logging.INFO)
+    logging.basicConfig(level=level, format=log_format, force=True)
 
 
 GITHUB_ORGA = "SkylabsAI"
@@ -546,7 +543,10 @@ class ReposData:
                     trigger_pr = await self.pr(
                         trigger.repo
                     )  # guaranteed != None but the typechecker does not know
-                    if trigger_pr is not None and pr.base_commit != trigger_pr.base_commit:
+                    if (
+                        trigger_pr is not None
+                        and pr.base_commit != trigger_pr.base_commit
+                    ):
                         wrong_targets[repo] = pr
 
             for repo in missing_prs:
@@ -738,7 +738,7 @@ def log_level(level_str):
 
 def add_common_args(parser):
     parser.add_argument(
-        "--debug-level",
+        "--log-level",
         choices=["DEBUG", "INFO", "WARN", "ERROR"],
         type=log_level,
         default="INFO",
@@ -820,7 +820,7 @@ def git_first_existing_choice(git_repo, choices):
 async def checkout_workspace_job(trigger):
     job_commit = await DATA.workspace_job_commit(trigger)
     workspace_git = git.Repo(Workspace().repo.dir_path)
-    logger.info(f"Checking out {Workspace().repo}")
+    logger.info(f"Checking out {Workspace().repo.github_path}")
     Workspace().repo.ensure_fetched(job_commit, depth=None)
     workspace_git.git.checkout(job_commit)
 
