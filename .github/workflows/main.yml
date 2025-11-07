@@ -116,7 +116,7 @@ jobs:
     # failed.
     if: |
       !cancelled() &&
-      needs.gen-job.result == "success"
+      needs.gen-job.result == 'success'
     defaults:
       run:
         shell: bash
