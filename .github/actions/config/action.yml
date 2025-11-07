@@ -32,7 +32,7 @@ runs:
                    --trigger-default-branch='${{ github.event.repository.default_branch }}' \
                    --trigger-branch='${{ github.head_ref || github.ref_name }}' --trigger-commit='${{ github.sha }}' \
                    --github-token='${{ inputs.FM_CI_TOKEN }}'" \
-                   --log-level='WARN'
+                   --log-level='WARN' \
           | tee -a "$GITHUB_OUTPUT"
         echo ci-script="uv --project dev/ci/gen/ run dev/ci/gen/ci.py" \
           | tee -a "$GITHUB_OUTPUT"
@@ -42,7 +42,11 @@ runs:
       working-directory: ${{ env.WORKDIR }}
       run: |
         # export GIT_PYTHON_TRACE=1
-        ${{ steps.parse.outputs.ci-script }} checkout_workspace ${{ steps.parse.outputs.args }}
+        echo -e '# `checkout_workspace`\n' >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        ${{ steps.parse.outputs.ci-script }} checkout_workspace ${{ steps.parse.outputs.args }} \
+          2> >(tee -a $GITHUB_STEP_SUMMARY >&2)
+        echo -e '```\n' >> $GITHUB_STEP_SUMMARY
     - id: shallow_clones
       name: "Shallow Clones"
       shell: bash
@@ -50,17 +54,35 @@ runs:
       run: |
         make lightweight-clone -j
     - id: config
-      name: "Commit Files"
+      name: "Build commit files"
       shell: bash
       working-directory: ${{ env.WORKDIR }}
       run: |
         # export GIT_PYTHON_TRACE=1
+        echo -e '# `config`\n' >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
         ${{ steps.parse.outputs.ci-script }} config ${{ steps.parse.outputs.args }} \
           --output-file-job="${{ env.COMMITS_JOB }}" \
           --output-file-base="${{ env.COMMITS_BASE }}" \
-          --output-file-github="$GITHUB_OUTPUT"
+          --output-file-github="$GITHUB_OUTPUT" \
+          2> >(tee -a $GITHUB_STEP_SUMMARY >&2)
+        echo -e '```\n' >> $GITHUB_STEP_SUMMARY
+    - name: "Output commit files"
+      shell: bash
+      working-directory: ${{ env.WORKDIR }}
+      run: |
         echo "==== JOB COMMITS ===="
-        cat ${{ env.COMMITS_JOB }}
+        echo -e '\n# Commits\n\n' >> $GITHUB_STEP_SUMMARY
+        echo -e '\n<details><summary>Job Commits</summary>\n\n```' >> $GITHUB_STEP_SUMMARY
+        cat ${{ env.COMMITS_JOB }} | tee -a $GITHUB_STEP_SUMMARY
+        echo -e '```\n\n</details>' >> $GITHUB_STEP_SUMMARY
+        if [[ "${{ steps.config.outputs.compare }}" = "1" ]]; then
+          echo "==== BASE COMMITS ===="
+          echo -e '\n# Commits\n\n' >> $GITHUB_STEP_SUMMARY
+          echo -e '\n<details><summary>Base Commits</summary>\n\n```' >> $GITHUB_STEP_SUMMARY
+          cat ${{ env.COMMITS_BASE }} | tee -a $GITHUB_STEP_SUMMARY
+          echo -e '```\n\n</details>' >> $GITHUB_STEP_SUMMARY
+        fi
     - id: artifact
       uses: actions/upload-artifact@v4
       name: "Upload Commit Files"
