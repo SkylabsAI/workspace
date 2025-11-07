@@ -69,7 +69,7 @@ jobs:
 
 
   workspace-success:
-    needs: [opam-build, full-build]
+    needs: [opam-build, full-build, python-build]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -80,6 +80,7 @@ jobs:
           ${{ needs.opam-build.result == 'success' && 'true' || 'false' }}
           echo "Checking that full-build succeeded"
           ${{ needs.full-build.result == 'success' && 'true' || 'false' }}
+
 
   opam-build:
     needs: gen-job
@@ -109,6 +110,120 @@ jobs:
           source ${{ env.BOILERPLATE }}
           ./fmdeps/fm-ci/docker/opam_build.sh "${{ env.ROCQ_LOG_PREFIX }}" '${{ env.OPAM_PACKAGES }}'
 
+  python-build:
+    needs: gen-job
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.WORKDIR }}
+    runs-on:
+      group: FM
+    container:
+      image: "ghcr.io/skylabsai/workspace:fm-default"
+      options: "-v /cache:/cache:ro -v /home/coq/.ssh:/home/coq/.ssh -v /home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
+      env:
+        NJOBS: "16"
+        BASH_ENV: "/home/coq/.profile"
+    steps:
+      - name: "Download CI files"
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.CI_FILES_ARTIFACT }}
+      - name: "Prepare Workspace"
+        uses: ./actions/prepare_workspace
+        with:
+          FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
+      - name: "Checkout Job Commits"
+        uses: ./actions/checkout_workspace
+
+      - name: Restore uv cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.uv-cache
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+            uv-${{ runner.os }}
+      - name: "Find projects"
+        run: |
+          source ${{ env.BOILERPLATE }}
+          for PROJECT in $(find -name 'pyproject.toml'); do
+            PROJECT_DIR=$(dirname $PROJECT)
+            echo $PROJECT_DIR | tee -a projects
+          done
+      - name: "Build projects"
+        run: |
+          source ${{ env.BOILERPLATE }}
+          for PROJECT_DIR in $(cat projects); do
+            echo "::group::Building $PROJECT_DIR"
+            uv build --directory $PROJECT_DIR
+            echo "::endgroup::"
+          done
+      - name: "Compile To-Do lists"
+        env:
+          PYTHON_TOOLS: "ty pytest prysk"
+        run: |
+          source ${{ env.BOILERPLATE }}
+          for PROJECT_DIR in $(cat projects); do
+            TREE="$(uv -qq --project $PROJECT_DIR tree --only-dev --depth 1)"
+            for TOOL in ${{ env.PYTHON_TOOLS }}; do
+              echo "$TREE" | grep -qE "\b${TOOL}\b" && echo $PROJECT >> todo_${TOOL} || true
+            done
+          done
+          for TOOL in ${{ env.PYTHON_TOOLS }}; do
+            echo "::group::To-Do List for ${TOOL}"
+            cat todo_${TOOL} || true
+            echo "::endgroup::"
+          done
+      - name: "ty"
+        if: |
+          !cancelled()
+        env:
+          PYTHON_TOOL: "ty"
+        run: |
+          source ${{ env.BOILERPLATE }}
+          if [[ -s "todo_${{ env.PYTHON_TOOL }}" ]]; then
+            for PROJECT_DIR in $(cat todo_${{ env.PYTHON_TOOL }}); do
+              echo "::group::Running ${{ env.PYTHON_TOOL}} in $PROJECT_DIR"
+              uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }} check
+              echo "::endgroup::"
+            done
+          else
+            echo "No projects found for ${{ env.PYTHON_TOOL }}"
+          fi
+      - name: "pytest"
+        if: |
+          !cancelled()
+        env:
+          PYTHON_TOOL: "pytest"
+        run: |
+          source ${{ env.BOILERPLATE }}
+          if [[ -s "todo_${{ env.PYTHON_TOOL }}" ]]; then
+            for PROJECT_DIR in $(cat todo_${{ env.PYTHON_TOOL }}); do
+              echo "::group::Running ${{ env.PYTHON_TOOL}} in $PROJECT_DIR"
+              uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }}
+              echo "::endgroup::"
+            done
+          else
+            echo "No projects found for ${{ env.PYTHON_TOOL }}"
+          fi
+      - name: "prysk"
+        if: |
+          !cancelled()
+        env:
+          PYTHON_TOOL: "prysk"
+        run: |
+          source ${{ env.BOILERPLATE }}
+          if [[ -s "todo_${{ env.PYTHON_TOOL }}" ]]; then
+            for PROJECT_DIR in $(cat todo_${{ env.PYTHON_TOOL }}); do
+              echo "::group::Running ${{ env.PYTHON_TOOL}} in $PROJECT_DIR"
+              uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }}
+              echo "::endgroup::"
+            done
+          else
+            echo "No projects found for ${{ env.PYTHON_TOOL }}"
+          fi
+
   full-build:
     needs: gen-job
     defaults:
@@ -133,7 +248,6 @@ jobs:
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
 
-      # TODO branches here are a problem
       - name: "Checkout Job Commits"
         uses: ./actions/checkout_workspace
 
@@ -190,7 +304,6 @@ jobs:
           mv perf-data ${{ env.SCRATCHDIR }}/perf-data
           rsync -a --prune-empty-dirs --include="*/" --include="*.d" --exclude="*" _build/ ${{ env.SCRATCHDIR }}/build_vd
 
-      # TODO branches here are a problem
       - name: "Checkout Base Commits"
         uses: ./actions/checkout_workspace
         if: |
@@ -236,7 +349,6 @@ jobs:
           mv perf-data ${{ env.SCRATCHDIR }}/perf-data_ref
 
       #### PERF ANALYSIS ####
-      # TODO branches here are a problem
       - name: "Checkout Job Commits (again)"
         uses: ./actions/checkout_workspace
         if: |
