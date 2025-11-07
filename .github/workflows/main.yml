@@ -111,7 +111,12 @@ jobs:
           ./fmdeps/fm-ci/docker/opam_build.sh "${{ env.ROCQ_LOG_PREFIX }}" '${{ env.OPAM_PACKAGES }}'
 
   python-build:
-    needs: gen-job
+    needs: [gen-job, full-build]
+    # We depend on [full-build] only to populate the cache; we do not care if it
+    # failed.
+    if: |
+      !cancelled() &&
+      needs.gen-job.result == "success"
     defaults:
       run:
         shell: bash
@@ -151,6 +156,15 @@ jobs:
             PROJECT_DIR=$(dirname $PROJECT)
             echo $PROJECT_DIR | tee -a projects
           done
+      - name: "Build OCaml dependencies"
+        run: |
+          source ${{ env.BOILERPLATE }}
+          echo "::group::make -s stage1"
+          make -s stage1
+          echo "::endgroup::"
+          echo "::group::dune build .."
+          dune b @fmdeps/install @psi/install
+          echo "::endgroup::"
       - name: "Build projects"
         run: |
           source ${{ env.BOILERPLATE }}
@@ -185,9 +199,15 @@ jobs:
           if [[ -s "todo_${{ env.PYTHON_TOOL }}" ]]; then
             for PROJECT_DIR in $(cat todo_${{ env.PYTHON_TOOL }}); do
               echo "::group::Running ${{ env.PYTHON_TOOL}} in $PROJECT_DIR"
-              uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }} check
+              uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }} check \
+                || (echo $PROJECT_DIR >> fail_${{ PYTHON_TOOL }})
               echo "::endgroup::"
             done
+            if [[ -s "fail_${{ env.PYTHON_TOOL }}" ]]; then
+              echo "${{ env.PYTHON_TOOL }} Failures:"
+              cat "fail_${{ env.PYTHON_TOOL }}"
+              exit 1
+            fi
           else
             echo "No projects found for ${{ env.PYTHON_TOOL }}"
           fi
@@ -201,9 +221,15 @@ jobs:
           if [[ -s "todo_${{ env.PYTHON_TOOL }}" ]]; then
             for PROJECT_DIR in $(cat todo_${{ env.PYTHON_TOOL }}); do
               echo "::group::Running ${{ env.PYTHON_TOOL}} in $PROJECT_DIR"
-              uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }}
+              uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }} \
+                || (echo $PROJECT_DIR >> fail_${{ PYTHON_TOOL }})
               echo "::endgroup::"
             done
+            if [[ -s "fail_${{ env.PYTHON_TOOL }}" ]]; then
+              echo "${{ env.PYTHON_TOOL }} Failures:"
+              cat "fail_${{ env.PYTHON_TOOL }}"
+              exit 1
+            fi
           else
             echo "No projects found for ${{ env.PYTHON_TOOL }}"
           fi
@@ -217,9 +243,16 @@ jobs:
           if [[ -s "todo_${{ env.PYTHON_TOOL }}" ]]; then
             for PROJECT_DIR in $(cat todo_${{ env.PYTHON_TOOL }}); do
               echo "::group::Running ${{ env.PYTHON_TOOL}} in $PROJECT_DIR"
-              uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }}
+              if [[ -d "${PROJECT_DIR}/tests" ]]; then
+                uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }} tests/ \
+                  || (echo $PROJECT_DIR >> fail_${{ PYTHON_TOOL }})
               echo "::endgroup::"
             done
+            if [[ -s "fail_${{ env.PYTHON_TOOL }}" ]]; then
+              echo "${{ env.PYTHON_TOOL }} Failures:"
+              cat "fail_${{ env.PYTHON_TOOL }}"
+              exit 1
+            fi
           else
             echo "No projects found for ${{ env.PYTHON_TOOL }}"
           fi
