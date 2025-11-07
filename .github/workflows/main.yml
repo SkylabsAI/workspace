@@ -181,7 +181,7 @@ jobs:
           for PROJECT_DIR in $(cat projects); do
             TREE="$(uv -qq --project $PROJECT_DIR tree --only-dev --depth 1)"
             for TOOL in ${{ env.PYTHON_TOOLS }}; do
-              echo "$TREE" | grep -qE "\b${TOOL}\b" && echo $PROJECT >> todo_${TOOL} || true
+              (echo "$TREE" | grep -qE "\b${TOOL}\b") && echo $PROJECT_DIR >> todo_${TOOL} || true
             done
           done
           for TOOL in ${{ env.PYTHON_TOOLS }}; do
