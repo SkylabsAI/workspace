@@ -11,3 +11,8 @@ dependencies = [
   "async_property",
   "tabulate",
 ]
+
+[dependency-groups]
+dev = [
+    "ty>=0.0.1a25",
+]
