@@ -150,8 +150,12 @@ jobs:
           source ${{ env.BOILERPLATE }}
           for PROJECT in $(find -name 'pyproject.toml' | grep -vE '\bpsi\b'); do
             PROJECT_DIR=$(dirname $PROJECT)
-            for TASK in $(uvx --directory $PROJECT_DIR --from taskipy task --list | grep -Eo '^[^ ]+_ci\b'); do
-              echo '{"project":"'$(basename $PROJECT_DIR)'", "project-dir":"'${PROJECT_DIR}'", "task":"'${TASK}'"}' | tee -a matrix
+            PROJECT=$(uvx --directory $PROJECT_DIR --from toml-cli toml get --toml-path pyproject.toml project.name)
+            echo $PROJECT: $PROJECT_DIR
+            TASKS=$(uvx --directory $PROJECT_DIR --from taskipy task --list | grep -Eo '^[^ ]+_ci\b')
+            echo $TASKS
+            for TASK in $TASKS; do
+              echo '{"project":"'${PROJECT}'", "project-dir":"'${PROJECT_DIR}'", "task":"'${TASK}'"}' | tee -a matrix
             done
           done
           echo matrix-combinations={\"include\":[$(cat matrix)]} | tee -a "$GITHUB_OUTPUT"
