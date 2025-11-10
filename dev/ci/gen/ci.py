@@ -1,18 +1,19 @@
-import argparse
 from arghandler import subcmd, ArgumentHandler
 
 from dataclasses import dataclass
 from collections import defaultdict
 from enum import Enum, StrEnum
 
-import git, git.exc, git.repo, git.repo.fun
-import gitdb, gitdb.exc
+import git
+import git.exc
+import git.repo
+import git.repo.fun
+import gitdb
+import gitdb.exc
 import os
-import sys
 import pexpect
 import asyncio
 
-from async_property import async_cached_property
 
 import httpx
 import gidgethub.httpx
@@ -269,7 +270,7 @@ class GithubSingleton:
 
     @property
     def g(self) -> gidgethub.httpx.GitHubAPI:
-        if self._g == None:
+        if self._g is None:
             self._g = gidgethub.httpx.GitHubAPI(
                 self.h, "skylabs-ci-helper", oauth_token=self.auth
             )
@@ -292,12 +293,11 @@ class GithubSingleton:
         if key in self.memoize["branch_pr"]:
             return self.memoize["branch_pr"][key]
         head = f"{GITHUB_ORGA}:{branch}"
-        url = f"/repos/{repo}/pulls?head={head}"
         # logger.debug(f"gitdgethub: Attempting to get paginated results for url {url}")
         prs = self.g.getiter(f"/repos/{repo}/pulls?head={head}")
         uniq_pr = None
         async for pr in prs:
-            if uniq_pr != None:
+            if uniq_pr is not None:
                 raise AmbiguousBranchPRs(repo, branch, [uniq_pr, pr])
             uniq_pr = pr
         self.memoize["branch_pr"][key] = uniq_pr
@@ -354,7 +354,7 @@ class ReposData:
 
     def __getitem__(self, repo):
         key = (repo.url, repo.dir_path)
-        if not (key in self.data):
+        if key not in self.data:
             self.data[key] = RepoData.empty()
         return self.data[key]
 
@@ -365,7 +365,7 @@ class ReposData:
     async def workspace_job_ref(self, trigger):
         ws = Workspace().repo
         data = self[ws]
-        if data.job_ref != None:
+        if data.job_ref is not None:
             return data.job_ref
         if trigger.repo == ws:
             logger.info(f"Pipeline triggered on {WORKSPACE_REPO}")
@@ -422,15 +422,15 @@ class ReposData:
                 and branch == trigger.branch
             ):
                 pr = await self.pr(repo, branch=branch)
-                if pr != None and pr.mergeable:
+                if pr is not None and pr.mergeable:
                     repo.git_repo.remotes.origin.fetch(
                         pr.merge_commit
                     )  # we don't get merge commits automatically
                     data.job_ref = pr.merge_commit
-                elif pr != None:
+                elif pr is not None:
                     status = (
                         "the mergeability of the PR has not yet been computed by GitHub"
-                        if pr.mergeable == None
+                        if pr.mergeable is None
                         else "GitHub reports that the branch cannot be merged without conflicts"
                     )
                     logger.warning(
@@ -450,10 +450,9 @@ class ReposData:
 
     # base ref of pr or default branch
     async def pr_base_ref(self, repo) -> str:
-        base_ref = None
         branch = self[repo].job_branch
         pr = await self.pr(repo, branch=branch)
-        if pr != None:
+        if pr is not None:
             return f"origin/{pr.base_ref}"
         else:
             return self.default_base_ref(repo)
@@ -463,9 +462,9 @@ class ReposData:
         data = self[repo]
         job_ref = data.job_ref
         job_branch = data.job_branch
-        if data.base_ref != None:
+        if data.base_ref is not None:
             return data.base_ref
-        has_job = job_ref != None and job_branch != None
+        has_job = job_ref is not None and job_branch is not None
         if not has_job:
             logger.info(f"{repo.github_path}: Repo has been deleted.")
         nondefault_pr_base = trigger.non_default_trigger_pr_base()
@@ -502,7 +501,7 @@ class ReposData:
                 repo.ensure_fetched(data.base_ref, depth=None)
         elif trigger.labels.same_branch and job_branch == nondefault_pr_base:
             if has_job:
-                data.base_ref = f"origin/nondefault_pr_base"
+                data.base_ref = "origin/nondefault_pr_base"
                 logger.info(
                     f"{repo.github_path}: Using non-default target branch {nondefault_pr_base} of triggering PR: {data.base_ref}"
                 )
@@ -533,14 +532,14 @@ class ReposData:
             wrong_targets: dict[Repo, PRData] = {}
             for repo in same_branch_repos:
                 pr = await self.pr(repo, branch=trigger.branch)
-                generic_msg = f"All repos participating in a pipeline with a custom target branch must have PRs open with the same target branch."
-                if pr == None:
+                generic_msg = "All repos participating in a pipeline with a custom target branch must have PRs open with the same target branch."
+                if pr is None:
                     missing_prs.append(repo)
                 else:
                     trigger_pr = await self.pr(
                         trigger.repo
                     )  # guaranteed != None but the typechecker does not know
-                    if trigger_pr != None and pr.base_ref != trigger_pr.base_ref:
+                    if trigger_pr is not None and pr.base_ref != trigger_pr.base_ref:
                         wrong_targets[repo] = pr
 
             for repo in missing_prs:
@@ -562,13 +561,13 @@ class ReposData:
                     # We do not place restrictions on PRs or rebased branches on up- an downstream repos
                     continue
                 pr = await self.pr(repo, branch=trigger.branch)
-                generic_msg = f"All repos participating in a \"pull_request\" pipeline must each have either mergeable PRs, or the triggering PR must target the default branch and every participating repo's branch must be fully rebased on the repo's own default branch."
-                if pr == None and not repo.git_repo.is_ancestor(
+                generic_msg = "All repos participating in a \"pull_request\" pipeline must each have either mergeable PRs, or the triggering PR must target the default branch and every participating repo's branch must be fully rebased on the repo's own default branch."
+                if pr is None and not repo.git_repo.is_ancestor(
                     repo.git_repo.commit(f"origin/{repo.default_branch}"),
                     repo.git_repo.commit(self[repo].job_ref),
                 ):
                     missing_prs_and_not_rebased.append(repo)
-                elif pr != None and pr.mergeable != True:
+                elif pr is not None and not pr.mergeable:
                     prs_not_mergeable[repo] = pr
             for repo in missing_prs_and_not_rebased:
                 logger.error(
@@ -579,7 +578,7 @@ class ReposData:
                 pr = prs_not_mergeable[repo]
                 status = (
                     "the mergeability of the PR has not yet been computed by GitHub"
-                    if pr.mergeable == None
+                    if pr.mergeable is None
                     else "GitHub reports that the branch cannot be merged without conflicts"
                 )
                 logger.error(
@@ -599,16 +598,16 @@ class ReposData:
         data = self[repo]
         if isinstance(data.pr, PRData):
             return data.pr
-        elif branch != None and branch == repo.default_branch:
+        elif branch is not None and branch == repo.default_branch:
             # There should not be pipelines running against the default branch that have an associated PR
             return None
-        elif branch == None and initial_pr_number == None:
+        elif branch is None and initial_pr_number is None:
             raise Exception(
                 f"Trying to find PR for repo {repo.github_path}: Either [branch] or [initial_pr_number] are required"
             )
-        elif branch != None and initial_pr_number == None:
+        elif branch is not None and initial_pr_number is None:
             gh_pr = await GH.branch_pr(repo.github_path, branch)
-            if gh_pr != None:
+            if gh_pr is not None:
                 data.pr = PRData.of_api_response(gh_pr)
                 initial_pr_number = data.pr.number
             else:
@@ -616,9 +615,9 @@ class ReposData:
                     f"Repo {repo.github_path}: Unable to find PR for branch {branch}"
                 )
                 return None
-        assert initial_pr_number != None
+        assert initial_pr_number is not None
         gh_pr = await GH.pr(repo.github_path, initial_pr_number)
-        if gh_pr != None:
+        if gh_pr is not None:
             data.pr = PRData.of_api_response(gh_pr)
         else:
             logger.error(
@@ -635,7 +634,7 @@ class ReposData:
     def output_base_refs(self, fname, repos):
         with open(fname, "w") as f:
             for r in repos:
-                if self[r].base_ref == None:
+                if self[r].base_ref is None:
                     logger.warning(f"Repo {r.github_path} does not have a base commit.")
                     continue
                 f.write(f"{r.dir_path}: {r.commit_of(self[r].base_ref)}\n")
@@ -663,15 +662,15 @@ class Trigger:
         if "labels" not in args:
             args["labels"] = None  # too hard to get via cmdline
         default_branch = (
-            args["default_branch"] if args["default_branch"] != None else "<stub>"
+            args["default_branch"] if args["default_branch"] is not None else "<stub>"
         )
         repo = repo_by_path(args["repo"], default_branch)
         args["repo"] = repo
-        pr_given = args["pr"] != None
+        args["pr"] is not None
         pr = await DATA.pr(repo, branch=args["branch"], initial_pr_number=args["pr"])
         args["pr"] = pr
         trigger = cls(**args)
-        if trigger.labels == None:
+        if trigger.labels is None:
             # We assume that we only have labels if a PR was given in the triggering event
             await trigger.backfill_labels()
         if (
@@ -695,18 +694,18 @@ class Trigger:
         return self.repo == other_repo
 
     async def backfill_labels(self):
-        if self.labels != None:
+        if self.labels is not None:
             return
-        if self.pr == None:
+        if self.pr is None:
             logger.warning(
-                f"Neither labels nor a PR were given via cmdline arguments. Assuming empty label set. Use --trigger-labels='' to silence this warning."
+                "Neither labels nor a PR were given via cmdline arguments. Assuming empty label set. Use --trigger-labels='' to silence this warning."
             )
             self.labels = Labels.defaults()
             return
         self.labels = self.pr.labels
 
     def non_default_trigger_pr_base(self):
-        if self.pr == None:
+        if self.pr is None:
             return None
         if self.pr.base_ref and self.repo.default_branch != self.pr.base_ref:
             return self.pr.base_ref
@@ -781,7 +780,7 @@ class Workspace:
 
     @staticmethod
     def __new__(cls):
-        if Workspace._singleton == None:
+        if Workspace._singleton is None:
             _singleton = super().__new__(cls)
         return _singleton
 
@@ -867,11 +866,11 @@ async def make_config(parser, context, args):
     await DATA.check_invariants(trigger, repos.repos)
 
     github_output = (
-        open(args.output_file_github, "a") if args.output_file_github != None else None
+        open(args.output_file_github, "a") if args.output_file_github is not None else None
     )
 
     trigger_pr = trigger.pr
-    if github_output != None and trigger_pr != None:
+    if github_output is not None and trigger_pr is not None:
         github_output.write(f"pr={trigger_pr.number}\n")
 
     if trigger.labels.compare:
@@ -885,10 +884,10 @@ async def make_config(parser, context, args):
         DATA.print()
         DATA.output_base_refs(args.output_file_base, repos.repos)
 
-        if github_output != None:
+        if github_output is not None:
             github_output.write("compare=1\n")
 
-    if GH.g != None and GH.g.rate_limit:
+    if GH.g is not None and GH.g.rate_limit:
         logger.info(GH.g.rate_limit)
     else:
         logger.info("No API calls ran. Rate limit info not available.")
@@ -903,7 +902,7 @@ def config(*args):
 
 @subcmd(help="Read repo configuration from stdin")
 def repos(parser, context, args):
-    repos = Repos.make()
+    Repos.make()
 
 
 if __name__ == "__main__":
