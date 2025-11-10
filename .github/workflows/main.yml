@@ -150,7 +150,7 @@ jobs:
         name: "Build Job ASTs"
         run: |
           source ${{ env.BOILERPLATE }}
-          make -s stage1
+          make -s -j${NJOBS} stage1
 
       ### NOTE: Every job after here should be resilient to build-job-asts
       ### and/or build-job steps failing. Use [if: '!cancelled()'] with quotes
@@ -205,7 +205,7 @@ jobs:
           needs.gen-job.outputs.compare == '1'
         run: |
           source ${{ env.BOILERPLATE }}
-          make -s stage1
+          make -s -j${NJOBS} stage1
       - name: "Build Base Proofs"
         if: |
           !cancelled() &&
