@@ -209,6 +209,7 @@ jobs:
 
       - name: "${{ matrix.project }}: ${{ matrix.task }}"
         run: |
+          export PATH=$(pwd)/_build/install/default/bin:$PATH
           uv --directory ${{ matrix.project-dir }} run task ${{ matrix.task }}
 
       # - name: "Build projects"
