@@ -149,6 +149,9 @@ jobs:
           restore-keys: |
             uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
             uv-${{ runner.os }}
+      - name: "Nuke bluerock repos"
+        run: |
+          make bluerock-nuke CONFIRM=yes
       - name: "Find projects"
         run: |
           source ${{ env.BOILERPLATE }}
