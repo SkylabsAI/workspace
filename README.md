@@ -50,7 +50,7 @@ source dev/activate.sh  # Enable the development environment.
 To start building, you can run the following.
 ```sh
 make ide-prepare        # Prepare for a minimal build.
-make stage1             # Build ASTs of client projects.
+make -j$(nproc) stage1  # Build ASTs of client projects.
 dune build              # Build for installation.
 ```
 
