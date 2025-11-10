@@ -148,12 +148,15 @@ jobs:
         id: "matrix"
         run: |
           source ${{ env.BOILERPLATE }}
+          touch matrix
           for PROJECT in $(find -name 'pyproject.toml' | grep -vE '\bpsi\b'); do
             PROJECT_DIR=$(dirname $PROJECT)
             PROJECT=$(uvx --directory $PROJECT_DIR --from toml-cli toml get --toml-path pyproject.toml project.name)
             echo $PROJECT: $PROJECT_DIR
             # TASKS=$(uvx --directory $PROJECT_DIR --from taskipy task --list | grep -Eo '^[^ ]+_ci\b')
-            uvx --directory $PROJECT_DIR --from taskipy task --list | grep -Eo '^[^ ]+_ci\b' >> tasks
+            (uvx --directory $PROJECT_DIR --from taskipy task --list \
+               | grep -Eo '^[^ ]+_ci\b' > tasks) \
+              || (echo -n "" > tasks)
             cat tasks
             for TASK in $(cat tasks); do
               echo '{"project":"'${PROJECT}'", "project-dir":"'${PROJECT_DIR}'", "task":"'${TASK}'"}' | tee -a matrix
