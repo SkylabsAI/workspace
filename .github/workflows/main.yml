@@ -175,7 +175,8 @@ jobs:
       env:
         NJOBS: "16"
         BASH_ENV: "/home/coq/.profile"
-    matrix: ${{ fromJson(needs.python-gen-job.outputs.matrix) }}
+    strategy:
+      matrix: ${{ fromJson(needs.python-gen-job.outputs.matrix) }}
     steps:
       - name: "Download CI files"
         uses: actions/download-artifact@v5
