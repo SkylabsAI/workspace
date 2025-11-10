@@ -209,7 +209,7 @@ jobs:
 
       - name: "${{ matrix.project }}: ${{ matrix.task }}"
         run: |
-          uvx --directory ${{ matrix.project-dir }} --from taskipy task ${{ matrix.task }}
+          uv --directory ${{ matrix.project-dir }} run task ${{ matrix.task }}
 
       # - name: "Build projects"
       #   run: |
