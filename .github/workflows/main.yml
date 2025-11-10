@@ -150,7 +150,7 @@ jobs:
           source ${{ env.BOILERPLATE }}
           for PROJECT in $(find -name 'pyproject.toml' | grep -vE '\bpsi\b'); do
             PROJECT_DIR=$(dirname $PROJECT)
-            for TASK in $(uvx --directory $PROJECT_DIR --from taskipy task --list | grep -Eo '^[^ ]_ci\b'); do
+            for TASK in $(uvx --directory $PROJECT_DIR --from taskipy task --list | grep -Eo '^[^ ]+_ci\b'); do
               echo '{"project":"'$(basename $PROJECT_DIR)'", "project-dir":"'${PROJECT_DIR}'", "task":"'${TASK}'"}' | tee -a matrix
             done
           done
