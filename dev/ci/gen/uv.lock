@@ -204,6 +204,45 @@ wheels = [
 ]
 
 [[package]]
+name = "ci-gen"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "arghandler" },
+    { name = "async-property" },
+    { name = "gidgethub", extra = ["httpx"] },
+    { name = "gitpython" },
+    { name = "pexpect" },
+    { name = "pygithub" },
+    { name = "tabulate" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "ruff" },
+    { name = "taskipy" },
+    { name = "ty" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "arghandler" },
+    { name = "async-property" },
+    { name = "gidgethub", extras = ["httpx"] },
+    { name = "gitpython" },
+    { name = "pexpect" },
+    { name = "pygithub" },
+    { name = "tabulate" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "ruff", specifier = ">=0.14.4" },
+    { name = "taskipy", specifier = ">=1.14.1" },
+    { name = "ty", specifier = ">=0.0.1a25" },
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -272,45 +311,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/99/55/181022996c4063fc0e7666a47049a1ca705abb9c8a13830f074edb347495/cryptography-46.0.3-pp311-pypy311_pp73-manylinux_2_34_aarch64.whl", hash = "sha256:9394673a9f4de09e28b5356e7fff97d778f8abad85c9d5ac4a4b7e25a0de7717", size = 4242957, upload-time = "2025-10-15T23:18:22.18Z" },
     { url = "https://files.pythonhosted.org/packages/ba/af/72cd6ef29f9c5f731251acadaeb821559fe25f10852f44a63374c9ca08c1/cryptography-46.0.3-pp311-pypy311_pp73-manylinux_2_34_x86_64.whl", hash = "sha256:94cd0549accc38d1494e1f8de71eca837d0509d0d44bf11d158524b0e12cebf9", size = 4409447, upload-time = "2025-10-15T23:18:24.209Z" },
     { url = "https://files.pythonhosted.org/packages/0d/c3/e90f4a4feae6410f914f8ebac129b9ae7a8c92eb60a638012dde42030a9d/cryptography-46.0.3-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:6b5063083824e5509fdba180721d55909ffacccc8adbec85268b48439423d78c", size = 3438528, upload-time = "2025-10-15T23:18:26.227Z" },
-]
-
-[[package]]
-name = "gen"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "arghandler" },
-    { name = "async-property" },
-    { name = "gidgethub", extra = ["httpx"] },
-    { name = "gitpython" },
-    { name = "pexpect" },
-    { name = "pygithub" },
-    { name = "tabulate" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ruff" },
-    { name = "taskipy" },
-    { name = "ty" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "arghandler" },
-    { name = "async-property" },
-    { name = "gidgethub", extras = ["httpx"] },
-    { name = "gitpython" },
-    { name = "pexpect" },
-    { name = "pygithub" },
-    { name = "tabulate" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "ruff", specifier = ">=0.14.4" },
-    { name = "taskipy", specifier = ">=1.14.1" },
-    { name = "ty", specifier = ">=0.0.1a25" },
 ]
 
 [[package]]
