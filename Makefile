@@ -14,9 +14,10 @@ SHELL := $(shell which bash)
 all: _CoqProject stage1
 	$(Q)dune build --display=short
 
+CPP2V = _build/install/default/bin/cpp2v
 .PHONY: ide-prepare
 ide-prepare: _CoqProject
-	$(Q)dune build --display=short @fmdeps/vendored/rocq/install
+	$(Q)dune build --display=short @fmdeps/vendored/rocq/install ${CPP2V}
 
 .PHONY: FORCE
 FORCE:
@@ -26,7 +27,7 @@ _CoqProject: fmdeps/BRiCk/scripts/coq_project_gen/gen-_CoqProject-dune.sh FORCE
 		|| { rm -f $@; exit 1; }
 
 .PHONY: stage1
-stage1: ide-prepare | ast-prepare-bluerock
+stage1: ide-prepare ast-prepare-bluerock
 
 # Updating the OCaml / Coq FM dependencies.
 update-br-fm-deps:

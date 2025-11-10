@@ -3,7 +3,7 @@ GITLAB_URL="${GITHUB_URL}SkylabsAI/bluerock."
 BHV_VENV = ${BHV_DIR}/.venv
 
 .PHONY: ast-prepare-bhv
-ast-prepare-bhv:
+ast-prepare-bhv: ide-prepare
 ifeq ($(wildcard ${BHV_DIR}),${BHV_DIR})
 ifneq ($(wildcard ${BHV_VENV}),${BHV_VENV})
 	@echo "[ENV] ${BHV_VENV}"
@@ -20,12 +20,10 @@ else
 endif
 
 NOVA_DIR = bluerock/NOVA
-CPP2V = _build/install/default/bin/cpp2v
 
 .PHONY: ast-prepare-NOVA
-ast-prepare-NOVA:
+ast-prepare-NOVA: ide-prepare
 ifeq ($(wildcard ${NOVA_DIR}),${NOVA_DIR})
-	$(Q)dune build ${CPP2V}
 	$(Q)$(MAKE) -C ${NOVA_DIR} CPP2V=$${PWD}/${CPP2V} dune-ast
 else
 	@echo "Skipping AST generation for ${NOVA_DIR} (not cloned)."
