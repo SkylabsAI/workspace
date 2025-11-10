@@ -14,5 +14,11 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "ruff>=0.14.4",
+    "taskipy>=1.14.1",
     "ty>=0.0.1a25",
 ]
+
+[tool.taskipy.tasks]
+format_ci = "ruff check"
+typecheck_ci = "ty check"
