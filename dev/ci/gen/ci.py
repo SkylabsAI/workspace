@@ -900,11 +900,6 @@ def config(*args):
     asyncio.run(make_config(*args))
 
 
-@subcmd(help="Read repo configuration from stdin")
-def repos(parser, context, args):
-    Repos.make()
-
-
 if __name__ == "__main__":
     # run the command - which will gather up all the subcommands
     handler = ArgumentHandler()
