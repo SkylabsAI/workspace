@@ -80,6 +80,8 @@ jobs:
           ${{ needs.opam-build.result == 'success' && 'true' || 'false' }}
           echo "Checking that full-build succeeded"
           ${{ needs.full-build.result == 'success' && 'true' || 'false' }}
+          echo "Checking that python-build succeeded"
+          ${{ needs.python-build.result == 'success' && 'true' || 'false' }}
 
 
   opam-build:
@@ -171,6 +173,7 @@ jobs:
     if: |
       !cancelled() &&
       needs.python-gen-job.result == 'success'
+    continue-on-error: true
     defaults:
       run:
         shell: bash
