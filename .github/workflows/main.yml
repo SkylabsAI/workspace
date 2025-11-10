@@ -110,13 +110,13 @@ jobs:
           source ${{ env.BOILERPLATE }}
           ./fmdeps/fm-ci/docker/opam_build.sh "${{ env.ROCQ_LOG_PREFIX }}" '${{ env.OPAM_PACKAGES }}'
 
-  python-build:
-    needs: [gen-job, full-build]
-    # We depend on [full-build] only to populate the cache; we do not care if it
-    # failed.
+  python-gen-job:
+    needs: [gen-job]
     if: |
       !cancelled() &&
       needs.gen-job.result == 'success'
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix-combinations }}
     defaults:
       run:
         shell: bash
@@ -141,6 +141,53 @@ jobs:
       - name: "Checkout Job Commits"
         uses: ./actions/checkout_workspace
 
+      - name: "Nuke bluerock repos"
+        run: |
+          make bluerock-nuke CONFIRM=yes
+      - name: "Build matrix include list"
+        id: "matrix"
+        run: |
+          source ${{ env.BOILERPLATE }}
+          for PROJECT in $(find -name 'pyproject.toml' | grep -vE '\bpsi\b'); do
+            PROJECT_DIR=$(dirname $PROJECT)
+            for TASK in $(uvx --directory $PROJECT_DIR --from taskipy task --list | grep -Eo '^[^ ]_ci\b'); do
+              echo '{"project":"'$(basename $PROJECT_DIR)'", "project-dir":"'${PROJECT_DIR}'", "task":"'${TASK}'"}' | tee -a matrix
+            done
+          done
+          echo matrix-combinations={\"include\":[$(cat matrix)]} | tee -a "$GITHUB_OUTPUT"
+
+  python-build:
+    needs: [python-gen-job]
+    # We depend on [full-build] only to populate the cache; we do not care if it
+    # failed.
+    if: |
+      !cancelled() &&
+      needs.python-gen-job.result == 'success'
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.WORKDIR }}
+    runs-on:
+      group: FM
+    container:
+      image: "ghcr.io/skylabsai/workspace:fm-default"
+      options: "-v /cache:/cache:ro -v /home/coq/.ssh:/home/coq/.ssh -v /home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
+      env:
+        NJOBS: "16"
+        BASH_ENV: "/home/coq/.profile"
+    matrix: ${{ fromJson(needs.python-gen-job.outputs.matrix) }}
+    steps:
+      - name: "Download CI files"
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.CI_FILES_ARTIFACT }}
+      - name: "Prepare Workspace"
+        uses: ./actions/prepare_workspace
+        with:
+          FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
+      - name: "Checkout Job Commits"
+        uses: ./actions/checkout_workspace
+
       - name: Restore uv cache
         uses: actions/cache@v4
         with:
@@ -149,16 +196,7 @@ jobs:
           restore-keys: |
             uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
             uv-${{ runner.os }}
-      - name: "Nuke bluerock repos"
-        run: |
-          make bluerock-nuke CONFIRM=yes
-      - name: "Find projects"
-        run: |
-          source ${{ env.BOILERPLATE }}
-          for PROJECT in $(find -name 'pyproject.toml'); do
-            PROJECT_DIR=$(dirname $PROJECT)
-            echo $PROJECT_DIR | tee -a projects
-          done
+
       - name: "Build OCaml dependencies"
         run: |
           source ${{ env.BOILERPLATE }}
@@ -168,101 +206,106 @@ jobs:
           echo "::group::dune build .."
           dune b @fmdeps/install @psi/install
           echo "::endgroup::"
-      - name: "Build projects"
+
+      - name: "${{ matrix.project }}: ${{ matrix.task }}"
         run: |
-          source ${{ env.BOILERPLATE }}
-          for PROJECT_DIR in $(cat projects); do
-            echo "::group::Building $PROJECT_DIR"
-            uv build --directory $PROJECT_DIR
-            echo "::endgroup::"
-          done
-      - name: "Compile To-Do lists"
-        env:
-          PYTHON_TOOLS: "ty pytest prysk"
-        run: |
-          source ${{ env.BOILERPLATE }}
-          for PROJECT_DIR in $(cat projects); do
-            TREE="$(uv -qq --project $PROJECT_DIR tree --only-dev --depth 1)"
-            for TOOL in ${{ env.PYTHON_TOOLS }}; do
-              (echo "$TREE" | grep -qE "\b${TOOL}\b") && echo $PROJECT_DIR >> todo_${TOOL} || true
-            done
-          done
-          for TOOL in ${{ env.PYTHON_TOOLS }}; do
-            echo "::group::To-Do List for ${TOOL}"
-            cat todo_${TOOL} || true
-            echo "::endgroup::"
-          done
-      - name: "ty"
-        if: |
-          !cancelled()
-        env:
-          PYTHON_TOOL: "ty"
-        run: |
-          source ${{ env.BOILERPLATE }}
-          if [[ -s "todo_${{ env.PYTHON_TOOL }}" ]]; then
-            for PROJECT_DIR in $(cat todo_${{ env.PYTHON_TOOL }}); do
-              echo "::group::Running ${{ env.PYTHON_TOOL}} in $PROJECT_DIR"
-              uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }} check \
-                || (echo $PROJECT_DIR >> fail_${{ env.PYTHON_TOOL }})
-              echo "::endgroup::"
-            done
-            if [[ -s "fail_${{ env.PYTHON_TOOL }}" ]]; then
-              echo "${{ env.PYTHON_TOOL }} Failures:"
-              cat "fail_${{ env.PYTHON_TOOL }}"
-              exit 1
-            fi
-          else
-            echo "No projects found for ${{ env.PYTHON_TOOL }}"
-          fi
-      - name: "pytest"
-        if: |
-          !cancelled()
-        env:
-          PYTHON_TOOL: "pytest"
-        run: |
-          source ${{ env.BOILERPLATE }}
-          if [[ -s "todo_${{ env.PYTHON_TOOL }}" ]]; then
-            for PROJECT_DIR in $(cat todo_${{ env.PYTHON_TOOL }}); do
-              echo "::group::Running ${{ env.PYTHON_TOOL}} in $PROJECT_DIR"
-              uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }} \
-                || (echo $PROJECT_DIR >> fail_${{ env.PYTHON_TOOL }})
-              echo "::endgroup::"
-            done
-            if [[ -s "fail_${{ env.PYTHON_TOOL }}" ]]; then
-              echo "${{ env.PYTHON_TOOL }} Failures:"
-              cat "fail_${{ env.PYTHON_TOOL }}"
-              exit 1
-            fi
-          else
-            echo "No projects found for ${{ env.PYTHON_TOOL }}"
-          fi
-      - name: "prysk"
-        if: |
-          !cancelled()
-        env:
-          PYTHON_TOOL: "prysk"
-        run: |
-          source ${{ env.BOILERPLATE }}
-          if [[ -s "todo_${{ env.PYTHON_TOOL }}" ]]; then
-            for PROJECT_DIR in $(cat todo_${{ env.PYTHON_TOOL }}); do
-              if [[ -d "${PROJECT_DIR}/tests" ]]; then
-                echo "::group::Running ${{ env.PYTHON_TOOL}} in $PROJECT_DIR"
-                uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }} tests/ \
-                  || (echo $PROJECT_DIR >> fail_${{ env.PYTHON_TOOL }})
-                echo "::endgroup::"
-              else
-                echo "Failed to find tests/ directory in ${PROJECT_DIR}"
-                echo $PROJECT_DIR >> fail_${{ env.PYTHON_TOOL }}
-              fi
-            done
-            if [[ -s "fail_${{ env.PYTHON_TOOL }}" ]]; then
-              echo "${{ env.PYTHON_TOOL }} Failures:"
-              cat "fail_${{ env.PYTHON_TOOL }}"
-              exit 1
-            fi
-          else
-            echo "No projects found for ${{ env.PYTHON_TOOL }}"
-          fi
+          uvx --directory ${{ matrix.project-dir }} --from taskipy task ${{ matrix.task }}
+
+      # - name: "Build projects"
+      #   run: |
+      #     source ${{ env.BOILERPLATE }}
+      #     for PROJECT_DIR in $(cat projects); do
+      #       echo "::group::Building $PROJECT_DIR"
+      #       uv build --directory $PROJECT_DIR
+      #       echo "::endgroup::"
+      #     done
+      # - name: "Compile To-Do lists"
+      #   env:
+      #     PYTHON_TOOLS: "ty pytest prysk"
+      #   run: |
+      #     source ${{ env.BOILERPLATE }}
+      #     for PROJECT_DIR in $(cat projects); do
+      #       TREE="$(uv -qq --project $PROJECT_DIR tree --only-dev --depth 1)"
+      #       for TOOL in ${{ env.PYTHON_TOOLS }}; do
+      #         (echo "$TREE" | grep -qE "\b${TOOL}\b") && echo $PROJECT_DIR >> todo_${TOOL} || true
+      #       done
+      #     done
+      #     for TOOL in ${{ env.PYTHON_TOOLS }}; do
+      #       echo "::group::To-Do List for ${TOOL}"
+      #       cat todo_${TOOL} || true
+      #       echo "::endgroup::"
+      #     done
+      # - name: "ty"
+      #   if: |
+      #     !cancelled()
+      #   env:
+      #     PYTHON_TOOL: "ty"
+      #   run: |
+      #     source ${{ env.BOILERPLATE }}
+      #     if [[ -s "todo_${{ env.PYTHON_TOOL }}" ]]; then
+      #       for PROJECT_DIR in $(cat todo_${{ env.PYTHON_TOOL }}); do
+      #         echo "::group::Running ${{ env.PYTHON_TOOL}} in $PROJECT_DIR"
+      #         uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }} check \
+      #           || (echo $PROJECT_DIR >> fail_${{ env.PYTHON_TOOL }})
+      #         echo "::endgroup::"
+      #       done
+      #       if [[ -s "fail_${{ env.PYTHON_TOOL }}" ]]; then
+      #         echo "${{ env.PYTHON_TOOL }} Failures:"
+      #         cat "fail_${{ env.PYTHON_TOOL }}"
+      #         exit 1
+      #       fi
+      #     else
+      #       echo "No projects found for ${{ env.PYTHON_TOOL }}"
+      #     fi
+      # - name: "pytest"
+      #   if: |
+      #     !cancelled()
+      #   env:
+      #     PYTHON_TOOL: "pytest"
+      #   run: |
+      #     source ${{ env.BOILERPLATE }}
+      #     if [[ -s "todo_${{ env.PYTHON_TOOL }}" ]]; then
+      #       for PROJECT_DIR in $(cat todo_${{ env.PYTHON_TOOL }}); do
+      #         echo "::group::Running ${{ env.PYTHON_TOOL}} in $PROJECT_DIR"
+      #         uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }} \
+      #           || (echo $PROJECT_DIR >> fail_${{ env.PYTHON_TOOL }})
+      #         echo "::endgroup::"
+      #       done
+      #       if [[ -s "fail_${{ env.PYTHON_TOOL }}" ]]; then
+      #         echo "${{ env.PYTHON_TOOL }} Failures:"
+      #         cat "fail_${{ env.PYTHON_TOOL }}"
+      #         exit 1
+      #       fi
+      #     else
+      #       echo "No projects found for ${{ env.PYTHON_TOOL }}"
+      #     fi
+      # - name: "prysk"
+      #   if: |
+      #     !cancelled()
+      #   env:
+      #     PYTHON_TOOL: "prysk"
+      #   run: |
+      #     source ${{ env.BOILERPLATE }}
+      #     if [[ -s "todo_${{ env.PYTHON_TOOL }}" ]]; then
+      #       for PROJECT_DIR in $(cat todo_${{ env.PYTHON_TOOL }}); do
+      #         if [[ -d "${PROJECT_DIR}/tests" ]]; then
+      #           echo "::group::Running ${{ env.PYTHON_TOOL}} in $PROJECT_DIR"
+      #           uv --directory $PROJECT_DIR run ${{ env.PYTHON_TOOL }} tests/ \
+      #             || (echo $PROJECT_DIR >> fail_${{ env.PYTHON_TOOL }})
+      #           echo "::endgroup::"
+      #         else
+      #           echo "Failed to find tests/ directory in ${PROJECT_DIR}"
+      #           echo $PROJECT_DIR >> fail_${{ env.PYTHON_TOOL }}
+      #         fi
+      #       done
+      #       if [[ -s "fail_${{ env.PYTHON_TOOL }}" ]]; then
+      #         echo "${{ env.PYTHON_TOOL }} Failures:"
+      #         cat "fail_${{ env.PYTHON_TOOL }}"
+      #         exit 1
+      #       fi
+      #     else
+      #       echo "No projects found for ${{ env.PYTHON_TOOL }}"
+      #     fi
 
   full-build:
     needs: gen-job
