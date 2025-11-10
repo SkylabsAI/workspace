@@ -159,7 +159,7 @@ jobs:
               || (echo -n "" > tasks)
             cat tasks
             for TASK in $(cat tasks); do
-              echo '{"project":"'${PROJECT}'", "project-dir":"'${PROJECT_DIR}'", "task":"'${TASK}'"}' | tee -a matrix
+              echo '{"project":"'${PROJECT}'", "project-dir":"'${PROJECT_DIR}'", "task":"'${TASK}'"},' | tee -a matrix
             done
           done
           echo matrix-combinations={\"include\":[$(cat matrix)]} | tee -a "$GITHUB_OUTPUT"
