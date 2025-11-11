@@ -163,10 +163,10 @@ jobs:
             cat tasks
             for TASK in $(cat tasks); do
               { grep -Eq '_ocaml_ci$' && OCAML="true" || OCAML="false"; }
-              echo '{"project":"'${PROJECT}'",\
-                     "project-dir":"'${PROJECT_DIR}'",\
-                     "ocaml":"'${OCAML}'",\
-                     "task":"'${TASK}'"},' \
+              echo '{"project":"'${PROJECT}'",
+                     "project-dir":"'${PROJECT_DIR}'",
+                     "ocaml":"'${OCAML}'",
+                     "task":"'${TASK}'"},'
                 | tee -a matrix
             done
           done
