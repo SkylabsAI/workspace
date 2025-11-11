@@ -264,6 +264,10 @@ jobs:
           source ${{ env.BOILERPLATE }}
           ulimit -S -s
 
+      - name: "Build dune-report tool"
+        run: |
+          opam install -y fmdeps/skylabs-fm/ocaml-dune-report/
+
       - id: build-job-asts
         name: "Build Job ASTs"
         run: |
@@ -289,6 +293,7 @@ jobs:
           needs.gen-job.outputs.compare == '1'
         run: |
           source ${{ env.BOILERPLATE }}
+          dune-report --json > ${{ env.SCRATCHDIR }}/dune-log-job.json
           # Print information on the size of the _build directory.
           du -hs _build
           du -hc $(find _build -type f -name "*.v") | tail -n 1
@@ -297,9 +302,12 @@ jobs:
           # Extract data.
           find _build/ -name '*.vo'| sort | xargs md5sum > ${{ env.SCRATCHDIR }}/md5sums.txt
           dune exec -- globfs.extract-all ${NJOBS} _build/default
-          # echo -e "\e[0Ksection_start:`date +%s`:section_9[collapsed=true]\r\e[0KGenerate code quality report"
-          (cd _build/default; dune exec -- coqc-perf.report .) > ${{ env.SCRATCHDIR }}/code-quality-job.txt
-          # echo -e "\e[0Ksection_end:`date +%s`:section_9\r\e[0K"
+          # Logs from glob files
+          mkdir ${{ env.SCRATCHDIR }}/globs-job/
+          find _build/ -type f -! -empty -name '*.glob.std*' > files_to_rsync
+          rsync -a --prune-empty-dirs --files-from=files_to_rsync  ${{ env.SCRATCHDIR}}/globs-job/
+          ls -al ${{ env.SCRATCHDIR }}/globs-job
+          # 
           dune exec -- coqc-perf.extract-all _build/default perf-data
           dune exec -- hint-data.extract-all ${NJOBS} perf-data
           du -hs _build
@@ -337,6 +345,7 @@ jobs:
           needs.gen-job.outputs.compare == '1'
         run: |
           source ${{ env.BOILERPLATE }}
+          dune-report --json > ${{ env.SCRATCHDIR }}/dune-log-base.json
           # Print information on the size of the _build directory.
           du -hs _build
           du -hc $(find _build -type f -name "*.v") | tail -n 1
@@ -345,7 +354,12 @@ jobs:
           # Extract data.
           find _build/ -name '*.vo'| sort | xargs md5sum > ${{ env.SCRATCHDIR }}/md5sums_ref.txt
           dune exec -- globfs.extract-all ${NJOBS} _build/default
-          (cd _build/default; dune exec -- coqc-perf.report .) > ${{ env.SCRATCHDIR }}/code-quality-base.txt
+          # Logs from glob files
+          mkdir ${{ env.SCRATCHDIR }}/globs-base/
+          find _build/ -type f -! -empty -name '*.glob.std*' > files_to_rsync
+          rsync -a --prune-empty-dirs --files-from=files_to_rsync  ${{ env.SCRATCHDIR}}/globs-base/
+          ls -al ${{ env.SCRATCHDIR }}/globs-job
+          # 
           dune exec -- coqc-perf.extract-all _build/default perf-data
           dune exec -- hint-data.extract-all ${NJOBS} perf-data
           du -hs _build
@@ -398,7 +412,15 @@ jobs:
           # python3 support/fm-perf/post_fm_perf.py --access-token ${PROOF_PERF_TOKEN} --project-id 74911021 --mr-id 3913 -f ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md --pipe-url "https://gitlab.com/skylabs_ai/FM/auto/-/pipelines/2116778517"
 
           # Code Quality diff
-          dune exec -- coqc-perf.code-quality-diff ${{ env.SCRATCHDIR }}/code-quality-base.txt  ${{ env.SCRATCHDIR }}/code-quality-job.txt >> $GITHUB_STEP_SUMMARY || true
+          find ${{ env.SCRATCHDIR }}/globs-job -type f -! -empty -name '*.glob.std*' > globs-job
+          find ${{ env.SCRATCHDIR }}/globs-base -type f -! -empty -name '*.glob.std*' > globs-base
+          (dune exec -- coqc-perf.code-quality-diff \
+            --before-globs-from-file=globs-base \
+            --after-globs-from-file=globs-job \
+            --before-dune=${{ env.SCRATCHDIR }}/dune-log-base.json \
+            --after-dune=${{ env.SCRATCHDIR }}/dune-log-job.json \
+              >> $GITHUB_STEP_SUMMARY) \
+            || true
           echo -e "\n" >> $GITHUB_STEP_SUMMARY
 
       - name: "Post Performance Analysis Comment"
