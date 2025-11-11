@@ -1,5 +1,5 @@
 [project]
-name = "gen"
+name = "ci-gen"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
@@ -11,3 +11,14 @@ dependencies = [
   "async_property",
   "tabulate",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.4",
+    "taskipy>=1.14.1",
+    "ty>=0.0.1a25",
+]
+
+[tool.taskipy.tasks]
+format_ci = "ruff check"
+typecheck_ci = "ty check"

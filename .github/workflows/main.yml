@@ -69,7 +69,7 @@ jobs:
 
 
   workspace-success:
-    needs: [opam-build, full-build]
+    needs: [opam-build, full-build, python-build]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -80,6 +80,9 @@ jobs:
           ${{ needs.opam-build.result == 'success' && 'true' || 'false' }}
           echo "Checking that full-build succeeded"
           ${{ needs.full-build.result == 'success' && 'true' || 'false' }}
+          echo "Checking that python-build succeeded"
+          ${{ needs.python-build.result == 'success' && 'true' || 'false' }}
+
 
   opam-build:
     needs: gen-job
@@ -109,6 +112,121 @@ jobs:
           source ${{ env.BOILERPLATE }}
           ./fmdeps/fm-ci/docker/opam_build.sh "${{ env.ROCQ_LOG_PREFIX }}" '${{ env.OPAM_PACKAGES }}'
 
+  python-gen-job:
+    needs: [gen-job]
+    if: |
+      !cancelled() &&
+      needs.gen-job.result == 'success'
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix-combinations }}
+    name: "Python: Generate Jobs"
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.WORKDIR }}
+    runs-on:
+      group: FM
+    container:
+      image: "ghcr.io/skylabsai/workspace:fm-default"
+      options: "-v /cache:/cache:ro -v /home/coq/.ssh:/home/coq/.ssh -v /home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
+      env:
+        NJOBS: "16"
+        BASH_ENV: "/home/coq/.profile"
+    steps:
+      - name: "Download CI files"
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.CI_FILES_ARTIFACT }}
+      - name: "Prepare Workspace"
+        uses: ./actions/prepare_workspace
+        with:
+          FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
+      - name: "Checkout Job Commits"
+        uses: ./actions/checkout_workspace
+
+      - name: "Nuke bluerock repos"
+        run: |
+          make bluerock-nuke CONFIRM=yes
+      - name: "Build matrix include list"
+        id: "matrix"
+        run: |
+          source ${{ env.BOILERPLATE }}
+          touch matrix
+          for PROJECT in $(find -name 'pyproject.toml' | grep -vE '\bpsi\b'); do
+            PROJECT_DIR=$(dirname $PROJECT)
+            PROJECT=$(uvx --directory $PROJECT_DIR --from toml-cli toml get --toml-path pyproject.toml project.name)
+            echo $PROJECT: $PROJECT_DIR
+            (uvx --directory $PROJECT_DIR --from taskipy task --list \
+               | grep -Eo '^[^ ]+_ci\b' > tasks) \
+              || (echo -n "" > tasks)
+            cat tasks
+            for TASK in $(cat tasks); do
+              { (echo "$TASK" | grep -Eq '_ocaml_ci$') && OCAML="true" || OCAML="false"; }
+              TASK_SHORT=$(echo "$TASK" | sed -re 's/_(ocaml)?_ci$//')
+              echo '{"project":"'${PROJECT}'",
+                     "project-dir":"'${PROJECT_DIR}'",
+                     "ocaml":'${OCAML}',
+                     "task":"'${TASK}'",
+                     "task_short":"'${TASK_SHORT}'"},' \
+                | tee -a matrix
+            done
+          done
+          echo matrix-combinations={\"include\":[$(cat matrix)]} | tee -a "$GITHUB_OUTPUT"
+
+  python-build:
+    needs: [python-gen-job]
+    # We depend on [full-build] only to populate the cache; we do not care if it
+    # failed.
+    if: |
+      !cancelled() &&
+      needs.python-gen-job.result == 'success'
+    continue-on-error: true
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.WORKDIR }}
+    runs-on:
+      group: FM
+    container:
+      image: "ghcr.io/skylabsai/workspace:fm-default"
+      options: "-v /cache:/cache:ro -v /home/coq/.ssh:/home/coq/.ssh -v /home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
+      env:
+        NJOBS: "16"
+        BASH_ENV: "/home/coq/.profile"
+    strategy:
+      matrix: ${{ fromJson(needs.python-gen-job.outputs.matrix) }}
+    name: "Python: ${{ matrix.project }}: ${{ matrix.task_short }}${{ matrix.ocaml && ' (with OCaml)' || '' }}"
+    steps:
+      - name: "Download CI files"
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.CI_FILES_ARTIFACT }}
+      - name: "Prepare Workspace"
+        uses: ./actions/prepare_workspace
+        with:
+          FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
+      - name: "Checkout Job Commits"
+        uses: ./actions/checkout_workspace
+
+      - name: "Build OCaml dependencies"
+        if: |
+          !cancelled() &&
+          matrix.ocaml
+        run: |
+          source ${{ env.BOILERPLATE }}
+          echo "::group::make -s stage1"
+          make -j${NJOBS} -s stage1
+          echo "::endgroup::"
+          echo "::group::dune build .."
+          dune b @fmdeps/install @psi/install
+          echo "::endgroup::"
+
+      - name: "${{ matrix.project }}: ${{ matrix.task }}"
+        run: |
+          export PATH=$(pwd)/_build/install/default/bin:$PATH
+          uv --directory ${{ matrix.project-dir }} run task ${{ matrix.task }}
+
+
   full-build:
     needs: gen-job
     defaults:
@@ -133,7 +251,6 @@ jobs:
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
 
-      # TODO branches here are a problem
       - name: "Checkout Job Commits"
         uses: ./actions/checkout_workspace
 
@@ -190,7 +307,6 @@ jobs:
           mv perf-data ${{ env.SCRATCHDIR }}/perf-data
           rsync -a --prune-empty-dirs --include="*/" --include="*.d" --exclude="*" _build/ ${{ env.SCRATCHDIR }}/build_vd
 
-      # TODO branches here are a problem
       - name: "Checkout Base Commits"
         uses: ./actions/checkout_workspace
         if: |
@@ -236,7 +352,6 @@ jobs:
           mv perf-data ${{ env.SCRATCHDIR }}/perf-data_ref
 
       #### PERF ANALYSIS ####
-      # TODO branches here are a problem
       - name: "Checkout Job Commits (again)"
         uses: ./actions/checkout_workspace
         if: |
