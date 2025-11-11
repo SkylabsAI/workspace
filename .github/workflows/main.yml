@@ -305,7 +305,7 @@ jobs:
           # Logs from glob files
           mkdir ${{ env.SCRATCHDIR }}/globs-job/
           find _build/ -type f -! -empty -name '*.glob.std*' > files_to_rsync
-          rsync -a --prune-empty-dirs --files-from=files_to_rsync  ${{ env.SCRATCHDIR}}/globs-job/
+          rsync -a --prune-empty-dirs --files-from=files_to_rsync _build/ ${{ env.SCRATCHDIR}}/globs-job/
           ls -al ${{ env.SCRATCHDIR }}/globs-job
           # 
           dune exec -- coqc-perf.extract-all _build/default perf-data
@@ -357,7 +357,7 @@ jobs:
           # Logs from glob files
           mkdir ${{ env.SCRATCHDIR }}/globs-base/
           find _build/ -type f -! -empty -name '*.glob.std*' > files_to_rsync
-          rsync -a --prune-empty-dirs --files-from=files_to_rsync  ${{ env.SCRATCHDIR}}/globs-base/
+          rsync -a --prune-empty-dirs --files-from=files_to_rsync _build/ ${{ env.SCRATCHDIR}}/globs-base/
           ls -al ${{ env.SCRATCHDIR }}/globs-job
           # 
           dune exec -- coqc-perf.extract-all _build/default perf-data
