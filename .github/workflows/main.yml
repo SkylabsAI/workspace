@@ -166,7 +166,7 @@ jobs:
               echo '{"project":"'${PROJECT}'",
                      "project-dir":"'${PROJECT_DIR}'",
                      "ocaml":"'${OCAML}'",
-                     "task":"'${TASK}'"},'
+                     "task":"'${TASK}'"},' \
                 | tee -a matrix
             done
           done
