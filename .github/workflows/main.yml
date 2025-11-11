@@ -415,10 +415,10 @@ jobs:
           find ${{ env.SCRATCHDIR }}/globs-job -type f -! -empty -name '*.glob.std*' > globs-job
           find ${{ env.SCRATCHDIR }}/globs-base -type f -! -empty -name '*.glob.std*' > globs-base
           (dune exec -- coqc-perf.code-quality-diff \
-            --before-globs-from-file=globs-base \
-            --after-globs-from-file=globs-job \
-            --before-dune=${{ env.SCRATCHDIR }}/dune-log-base.json \
-            --after-dune=${{ env.SCRATCHDIR }}/dune-log-job.json \
+            --before-globs-from-file globs-base \
+            --after-globs-from-file globs-job \
+            --before-dune ${{ env.SCRATCHDIR }}/dune-log-base.json \
+            --after-dune ${{ env.SCRATCHDIR }}/dune-log-job.json \
               >> $GITHUB_STEP_SUMMARY) \
             || true
           echo -e "\n" >> $GITHUB_STEP_SUMMARY
