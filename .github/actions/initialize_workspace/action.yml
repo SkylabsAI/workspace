@@ -47,4 +47,4 @@ runs:
     - name: "Create boilerplate.sh"
       shell: sh
       run: |
-        echo 'ulimit -S -s 32768; source ~/.pyenv/bin/activate; eval $(opam env)' > ${{ env.BOILERPLATE }}
+        echo 'source ~/.profile; ulimit -S -s 32768' > ${{ env.BOILERPLATE }}
