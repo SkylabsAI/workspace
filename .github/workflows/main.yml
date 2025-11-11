@@ -430,8 +430,7 @@ jobs:
             ${{ env.SCRATCHDIR }}/perf_summary.csv
             ${{ env.SCRATCHDIR }}/commits_ref.txt
             ${{ env.SCRATCHDIR }}/ast_md5sums_ref.txt
-            ${{ env.SCRATCHDIR }}/md5sums_ref.txt
-            ${{ env.SCRATCHDIR }}/perf-report
+            ${{ env.SCRATCHDIR }}/md5sums_ref.txt            
             ${{ env.SCRATCHDIR }}/perf_analysis.md
             ${{ env.SCRATCHDIR }}/perf_analysis.csv
             ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md
