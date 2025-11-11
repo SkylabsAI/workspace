@@ -162,7 +162,7 @@ jobs:
               || (echo -n "" > tasks)
             cat tasks
             for TASK in $(cat tasks); do
-              { grep -Eq '_ocaml_ci$' && OCAML="true" || OCAML="false"; }
+              { (echo "$TASK" | grep -Eq '_ocaml_ci$') && OCAML="true" || OCAML="false"; }
               echo '{"project":"'${PROJECT}'",
                      "project-dir":"'${PROJECT_DIR}'",
                      "ocaml":'${OCAML}',
