@@ -210,7 +210,7 @@ jobs:
       - name: "Build OCaml dependencies"
         if: |
           !cancelled() &&
-          matrix.ocaml
+          matrix.ocaml == 'true'
         run: |
           source ${{ env.BOILERPLATE }}
           echo "::group::make -s stage1"
