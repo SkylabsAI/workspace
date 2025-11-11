@@ -194,7 +194,7 @@ jobs:
         BASH_ENV: "/home/coq/.profile"
     strategy:
       matrix: ${{ fromJson(needs.python-gen-job.outputs.matrix) }}
-    name: "Python: ${{ matrix.project }}: ${{ matrix.task }}"
+    name: "Python: ${{ matrix.project }}: ${{ matrix.task }}${{ matrix.ocaml && '(with OCaml)' || '' }}"
     steps:
       - name: "Download CI files"
         uses: actions/download-artifact@v5
