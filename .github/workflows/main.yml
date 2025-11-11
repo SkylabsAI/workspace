@@ -165,7 +165,7 @@ jobs:
               { grep -Eq '_ocaml_ci$' && OCAML="true" || OCAML="false"; }
               echo '{"project":"'${PROJECT}'",
                      "project-dir":"'${PROJECT_DIR}'",
-                     "ocaml":"'${OCAML}'",
+                     "ocaml":'${OCAML}',
                      "task":"'${TASK}'"},' \
                 | tee -a matrix
             done
