@@ -13,4 +13,4 @@ fi
 
 echo "Setting up a new Python virtual environment."
 echo "Created in: $(realpath .venv)"
-uv venv --quiet --python 3.11
+uv venv --quiet --python 3.13
