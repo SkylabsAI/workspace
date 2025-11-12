@@ -55,6 +55,7 @@ jobs:
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
       - id: config
+        name: "Generate job config"
         uses: ./workspace_checkout/.github/actions/config
         with:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
@@ -263,6 +264,10 @@ jobs:
           source ${{ env.BOILERPLATE }}
           ulimit -S -s
 
+      - name: "Build dune-report tool"
+        run: |
+          opam install -y fmdeps/skylabs-fm/ocaml-dune-report/
+
       - id: build-job-asts
         name: "Build Job ASTs"
         run: |
@@ -288,6 +293,7 @@ jobs:
           needs.gen-job.outputs.compare == '1'
         run: |
           source ${{ env.BOILERPLATE }}
+          dune-report --json > ${{ env.SCRATCHDIR }}/dune-log-job.json
           # Print information on the size of the _build directory.
           du -hs _build
           du -hc $(find _build -type f -name "*.v") | tail -n 1
@@ -296,10 +302,11 @@ jobs:
           # Extract data.
           find _build/ -name '*.vo'| sort | xargs md5sum > ${{ env.SCRATCHDIR }}/md5sums.txt
           dune exec -- globfs.extract-all ${NJOBS} _build/default
-          # echo -e "\e[0Ksection_start:`date +%s`:section_9[collapsed=true]\r\e[0KGenerate code quality report"
-          (cd _build/default; dune exec -- coqc-perf.report .) | tee -a coq_codeq.log
-          cat coq_codeq.log | dune exec -- coqc-perf.code-quality-report > ${{ env.SCRATCHDIR }}/gl-code-quality-report.json || true
-          # echo -e "\e[0Ksection_end:`date +%s`:section_9\r\e[0K"
+          # Logs from glob files
+          mkdir ${{ env.SCRATCHDIR }}/globs-job/
+          find _build/ -type f -! -empty -name '*.glob.std*' > files_to_rsync
+          rsync -a --prune-empty-dirs --files-from=files_to_rsync ./ ${{ env.SCRATCHDIR}}/globs-job/
+          # 
           dune exec -- coqc-perf.extract-all _build/default perf-data
           dune exec -- hint-data.extract-all ${NJOBS} perf-data
           du -hs _build
@@ -337,6 +344,7 @@ jobs:
           needs.gen-job.outputs.compare == '1'
         run: |
           source ${{ env.BOILERPLATE }}
+          dune-report --json > ${{ env.SCRATCHDIR }}/dune-log-base.json
           # Print information on the size of the _build directory.
           du -hs _build
           du -hc $(find _build -type f -name "*.v") | tail -n 1
@@ -345,6 +353,11 @@ jobs:
           # Extract data.
           find _build/ -name '*.vo'| sort | xargs md5sum > ${{ env.SCRATCHDIR }}/md5sums_ref.txt
           dune exec -- globfs.extract-all ${NJOBS} _build/default
+          # Logs from glob files
+          mkdir ${{ env.SCRATCHDIR }}/globs-base/
+          find _build/ -type f -! -empty -name '*.glob.std*' > files_to_rsync
+          rsync -a --prune-empty-dirs --files-from=files_to_rsync ./ ${{ env.SCRATCHDIR}}/globs-base/
+          # 
           dune exec -- coqc-perf.extract-all _build/default perf-data
           dune exec -- hint-data.extract-all ${NJOBS} perf-data
           du -hs _build
@@ -374,9 +387,12 @@ jobs:
           dune exec -- coqc-perf.summary-diff --no-colors --instr-threshold 1 --csv perf-data_ref/perf_summary.csv perf-data/perf_summary.csv > ${{ env.SCRATCHDIR }}/perf_analysis.csv
           dune exec -- coqc-perf.summary-diff --no-colors --instr-threshold 1 --gitlab --diff-base-url "https://skylabs_ai.gitlab.io/-/FM/fm-ci/-/jobs/${CI_JOB_ID}/artifacts/perf-report" perf-data_ref/perf_summary.csv perf-data/perf_summary.csv > ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md
 
+          echo "# Performance Report" >> $GITHUB_STEP_SUMMARY
+
           echo "Performance summary for ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" > ${{ env.SCRATCHDIR }}/perf_analysis_comment.md
           echo "" >> ${{ env.SCRATCHDIR }}/perf_analysis_comment.md
           dune exec -- coqc-perf.summary-diff --no-colors --instr-threshold 1 --github perf-data_ref/perf_summary.csv perf-data/perf_summary.csv | tee | tee -a ${{ env.SCRATCHDIR }}/perf_analysis_comment.md >> $GITHUB_STEP_SUMMARY
+          echo -e "\n" >> $GITHUB_STEP_SUMMARY
 
           dune exec -- coqc-perf.html-diff-all perf-data_ref perf-data ${{ env.SCRATCHDIR }}/perf-report
           # Adding hint data diff
@@ -392,6 +408,20 @@ jobs:
           fi
           echo -e '\n</details>\n' >> ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md
           # python3 support/fm-perf/post_fm_perf.py --access-token ${PROOF_PERF_TOKEN} --project-id 74911021 --mr-id 3913 -f ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md --pipe-url "https://gitlab.com/skylabs_ai/FM/auto/-/pipelines/2116778517"
+
+          # Code Quality diff
+          mkdir -p ${{ env.SCRATCHDIR }}/globs-job/_build/default
+          find ${{ env.SCRATCHDIR }}/globs-job -type f -! -empty -name '*.glob.std*' > ${{ env.SCRATCHDIR }}/globs-job/_build/default/files
+          mkdir -p ${{ env.SCRATCHDIR }}/globs-base/_build/default
+          find ${{ env.SCRATCHDIR }}/globs-base -type f -! -empty -name '*.glob.std*' > ${{ env.SCRATCHDIR }}/globs-base/_build/default/files
+          (dune exec -- coqc-perf.code-quality-diff \
+            --before-globs-from-file ${{ env.SCRATCHDIR }}/globs-base/_build/default/files \
+            --after-globs-from-file ${{ env.SCRATCHDIR }}/globs-job/_build/default/files \
+            --before-dune ${{ env.SCRATCHDIR }}/dune-log-base.json \
+            --after-dune ${{ env.SCRATCHDIR }}/dune-log-job.json \
+              >> $GITHUB_STEP_SUMMARY) \
+            || true
+          echo -e "\n" >> $GITHUB_STEP_SUMMARY
 
       - name: "Post Performance Analysis Comment"
         if: |
@@ -413,13 +443,13 @@ jobs:
             -d @${{ env.SCRATCHDIR }}/perf_analysis_comment.json
 
 
-      - name: "Upload Artifacts"
+      - name: "Upload Summary Artifacts"
         if: |
           !cancelled() &&
           github.event_name != 'push'
         uses: actions/upload-artifact@v4
         with:
-          name: "reports"
+          name: "summary-reports"
           if-no-files-found: ignore
           path: |
             ${{ env.SCRATCHDIR }}/commits.txt
@@ -437,3 +467,15 @@ jobs:
             ${{ env.SCRATCHDIR }}/hint_data_diff.html
             ${{ env.SCRATCHDIR }}/hint-data_ref.csv
             ${{ env.SCRATCHDIR }}/perf_summary_ref.csv
+            ${{ env.SCRATCHDIR }}/gl-code-quality-report.json
+
+      # - name: "Upload Detailed Performance Artifacts"
+      #   if: |
+      #     !cancelled() &&
+      #     github.event_name != 'push'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: "performance-reports"
+      #     if-no-files-found: ignore
+      #     path: |
+      #       ${{ env.SCRATCHDIR }}/perf-report

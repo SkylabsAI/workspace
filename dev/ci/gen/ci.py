@@ -25,10 +25,7 @@ log_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
 
 
 def reconfigure_logging(level):
-    logging.basicConfig(level=logging.INFO, format=log_format, force=True)
-
-
-reconfigure_logging(logging.INFO)
+    logging.basicConfig(level=level, format=log_format, force=True)
 
 
 GITHUB_ORGA = "SkylabsAI"
@@ -126,6 +123,8 @@ class Repo:
         return git.Repo(os.path.join(os.getcwd(), self.dir_path))
 
     def ensure_fetched(self, obj, depth=None):
+        if self.has_commit(obj):
+            return
         if isinstance(obj, str) and obj.startswith("origin/"):
             obj = obj.removeprefix("origin/")
         try:
@@ -311,7 +310,7 @@ GH = GithubSingleton()
 class PRData:
     number: int
     head_ref: str
-    base_ref: str
+    base_commit: str
     mergeable: bool | None  # can be null in github's API
     merge_commit: str | None
     labels: Labels
@@ -323,7 +322,7 @@ class PRData:
         return cls(
             number=response["number"],
             head_ref=response["head"]["ref"],
-            base_ref=response["base"]["ref"],
+            base_commit=response["base"]["ref"],
             mergeable=mergeable,
             merge_commit=response["merge_commit_sha"] if mergeable else None,
             labels=Labels.of_set(map(lambda x: x["name"], response["labels"])),
@@ -337,10 +336,10 @@ class RepoData:
     job_branch: (
         str | None
     )  # this is always a branch name but not necessarily an unambiguous reference; does not include [origin/] prefix
-    job_ref: (
+    job_commit: (
         str | None
     )  # this can be a commit in the case of the trigger and also whenever we run pull_request pipelines where the actual code might be a merge commit of job_branch and the target
-    base_ref: str | None
+    base_commit: str | None
 
     @classmethod
     def empty(cls):
@@ -351,6 +350,7 @@ class RepoData:
 class ReposData:
     def __init__(self):
         self.data = {}
+        self.missing_prs_warned = set([])
 
     def __getitem__(self, repo):
         key = (repo.url, repo.dir_path)
@@ -362,15 +362,15 @@ class ReposData:
         for r in self.data:
             print(f"{r}: {self.data[r]}")
 
-    async def workspace_job_ref(self, trigger):
+    async def workspace_job_commit(self, trigger):
         ws = Workspace().repo
         data = self[ws]
-        if data.job_ref is not None:
-            return data.job_ref
+        if data.job_commit is not None:
+            return data.job_commit
         if trigger.repo == ws:
             logger.info(f"Pipeline triggered on {WORKSPACE_REPO}")
             logger.info(f"Using trigger commit {trigger.commit}")
-            data.job_ref = trigger.commit
+            data.job_commit = trigger.commit
         elif trigger.labels.same_branch:
             logger.info(f"Pipeline trigger from outside of {WORKSPACE_REPO}")
             job_choices = await self.job_choices(trigger, ws)
@@ -379,15 +379,15 @@ class ReposData:
             )
             choice = git_first_existing_choice(ws, job_choices)
             logger.info(f"Using first existing choice for {WORKSPACE_REPO}: {choice}")
-            data.job_ref = choice
+            data.job_commit = choice
         else:
             logger.info(
                 f"Pipeline trigger from outside of {WORKSPACE_REPO} with {Label.NO_SAME_BRANCH} "
             )
             default = ws.default_branch
             logger.info(f"Using default branch {default}")
-            data.job_ref = default
-        return data.job_ref
+            data.job_commit = default
+        return data.job_commit
 
     # compute the branch names/hashes to try based on the trigger configuration
     async def job_choices(self, trigger, repo):
@@ -404,7 +404,7 @@ class ReposData:
         # without same branch we just pick the default branch of the current repo
         return [repo.default_branch]
 
-    async def compute_job_refs(self, trigger, repos):
+    async def compute_job_commits(self, trigger, repos):
         choices = await asyncio.gather(
             *map(lambda r: self.job_choices(trigger, r), repos)
         )
@@ -412,11 +412,12 @@ class ReposData:
             data = self[repo]
             branch = git_first_existing_choice(repo, cs)
             data.job_branch = branch
+            result = None
             if trigger.is_trigger_repo(repo):
                 # for the triggering repo, the trigger commit is the most precise ref we have
                 # it will also already be a merge commit for pull_request triggers
                 assert trigger.branch in cs
-                data.job_ref = trigger.commit
+                result = trigger.commit
             elif (
                 trigger.event_type == EventType.PULL_REQUEST
                 and branch == trigger.branch
@@ -426,7 +427,7 @@ class ReposData:
                     repo.git_repo.remotes.origin.fetch(
                         pr.merge_commit
                     )  # we don't get merge commits automatically
-                    data.job_ref = pr.merge_commit
+                    result = pr.merge_commit
                 elif pr is not None:
                     status = (
                         "the mergeability of the PR has not yet been computed by GitHub"
@@ -436,35 +437,38 @@ class ReposData:
                     logger.warning(
                         f"Repo {repo.github_path} has a PR for {data.job_branch} but {status}. Falling back to {data.job_branch}."
                     )
-                    data.job_ref = f"origin/{data.job_branch}"
+                    result = f"origin/{data.job_branch}"
                 else:
                     logger.warning(
                         f"Repo {repo.github_path} has a branch {trigger.branch} but no PR exists for it. Cannot determine merge commit. Falling back to {data.job_branch}."
                     )
-                    data.job_ref = f"origin/{data.job_branch}"
+                    result = f"origin/{data.job_branch}"
             else:
-                data.job_ref = f"origin/{data.job_branch}"
+                result = f"origin/{data.job_branch}"
+            assert result is not None
+            repo.ensure_fetched(result)
+            data.job_commit = repo.git_repo.commit(result).hexsha
 
-    def default_base_ref(self, repo) -> str:
+    def default_base_commit(self, repo) -> str:
         return f"origin/{repo.default_branch}"
 
     # base ref of pr or default branch
-    async def pr_base_ref(self, repo) -> str:
+    async def pr_base_commit(self, repo) -> str:
         branch = self[repo].job_branch
         pr = await self.pr(repo, branch=branch)
         if pr is not None:
-            return f"origin/{pr.base_ref}"
+            return f"origin/{pr.base_commit}"
         else:
-            return self.default_base_ref(repo)
+            return self.default_base_commit(repo)
 
-    # needs to run after [compute_job_refs]
-    async def base_ref(self, trigger, repo):
+    # needs to run after [compute_job_commits]
+    async def base_commit(self, trigger, repo):
         data = self[repo]
-        job_ref = data.job_ref
+        job_commit = data.job_commit
         job_branch = data.job_branch
-        if data.base_ref is not None:
-            return data.base_ref
-        has_job = job_ref is not None and job_branch is not None
+        if data.base_commit is not None:
+            return data.base_commit
+        has_job = job_commit is not None and job_branch is not None
         if not has_job:
             logger.info(f"{repo.github_path}: Repo has been deleted.")
         nondefault_pr_base = trigger.non_default_trigger_pr_base()
@@ -474,55 +478,55 @@ class ReposData:
             and repo.mode != RepoMode.OWNED
             and job_branch == trigger.branch
         ):
-            base_ref = await self.pr_base_ref(repo)
-            assert base_ref == self.default_base_ref(
+            base_commit = await self.pr_base_commit(repo)
+            assert base_commit == self.default_base_commit(
                 repo
             )  # TODO: support for non-default target branches
-            data.base_ref = base_ref
+            data.base_commit = base_commit
         elif trigger.repo == repo:
             assert has_job  # we should not trigger CI from repos that are no longer part of the workspace
-            base_ref = await self.pr_base_ref(repo)
-            merge_base = repo.uniq_merge_base(base_ref, job_ref)
+            base_commit = await self.pr_base_commit(repo)
+            merge_base = repo.uniq_merge_base(base_commit, job_commit)
             logger.info(
-                f"{repo.github_path}: Using merge base of {base_ref} and job ref {job_ref}: {merge_base}"
+                f"{repo.github_path}: Using merge base of {base_commit} and job ref {job_commit}: {merge_base}"
             )
-            data.base_ref = merge_base
+            data.base_commit = merge_base
         elif trigger.labels.same_branch and job_branch == trigger.branch:
             if has_job:
-                base_ref = await self.pr_base_ref(repo)
-                merge_base = repo.uniq_merge_base(base_ref, job_ref)
+                base_commit = await self.pr_base_commit(repo)
+                merge_base = repo.uniq_merge_base(base_commit, job_commit)
                 logger.info(
-                    f"{repo.github_path}: Using merge base of {base_ref} and job ref {job_ref}: {merge_base}"
+                    f"{repo.github_path}: Using merge base of {base_commit} and job ref {job_commit}: {merge_base}"
                 )
-                data.base_ref = merge_base
+                data.base_commit = merge_base
             else:
-                data.base_ref = await self.pr_base_ref(repo)
-                logger.info(f"{repo.github_path}: Using: {data.base_ref}")
-                repo.ensure_fetched(data.base_ref, depth=None)
+                data.base_commit = await self.pr_base_commit(repo)
+                logger.info(f"{repo.github_path}: Using: {data.base_commit}")
+                repo.ensure_fetched(data.base_commit, depth=None)
         elif trigger.labels.same_branch and job_branch == nondefault_pr_base:
             if has_job:
-                data.base_ref = "origin/nondefault_pr_base"
+                data.base_commit = "origin/nondefault_pr_base"
                 logger.info(
-                    f"{repo.github_path}: Using non-default target branch {nondefault_pr_base} of triggering PR: {data.base_ref}"
+                    f"{repo.github_path}: Using non-default target branch {nondefault_pr_base} of triggering PR: {data.base_commit}"
                 )
             else:
-                data.base_ref = f"origin/{repo.default_branch}"
-                repo.ensure_fetched(data.base_ref, depth=None)
+                data.base_commit = f"origin/{repo.default_branch}"
+                repo.ensure_fetched(data.base_commit, depth=None)
                 logger.info(
-                    f"{repo.github_path}: Using default branch: {data.base_ref}"
+                    f"{repo.github_path}: Using default branch: {data.base_commit}"
                 )
         else:
             # whatever we used for the main job, we'll use it for the comparison base
             assert has_job
-            data.base_ref = job_ref
-        return data.base_ref
+            data.base_commit = job_commit
+        return data.base_commit
 
-    async def workspace_base_ref(self, trigger):
-        return await self.base_ref(trigger, Workspace().repo)
+    async def workspace_base_commit(self, trigger):
+        return await self.base_commit(trigger, Workspace().repo)
 
-    async def compute_base_refs(self, trigger, repos):
+    async def compute_base_commits(self, trigger, repos):
         for repo in repos:
-            await self.base_ref(trigger, repo)
+            await self.base_commit(trigger, repo)
 
     async def check_invariants(self, trigger, repos):
         fail = False
@@ -539,7 +543,10 @@ class ReposData:
                     trigger_pr = await self.pr(
                         trigger.repo
                     )  # guaranteed != None but the typechecker does not know
-                    if trigger_pr is not None and pr.base_ref != trigger_pr.base_ref:
+                    if (
+                        trigger_pr is not None
+                        and pr.base_commit != trigger_pr.base_commit
+                    ):
                         wrong_targets[repo] = pr
 
             for repo in missing_prs:
@@ -549,7 +556,7 @@ class ReposData:
                 fail = True
             for repo, pr in wrong_targets.items():
                 logger.error(
-                    f"Repo {repo.github_path} has a branch {trigger.branch} and PR {pr.number} but the PR's target branch is {pr.base_ref}, not {trigger.branch}. {generic_msg}"
+                    f"Repo {repo.github_path} has a branch {trigger.branch} and PR {pr.number} but the PR's target branch is {pr.base_commit}, not {trigger.branch}. {generic_msg}"
                 )
                 fail = True
 
@@ -564,7 +571,7 @@ class ReposData:
                 generic_msg = "All repos participating in a \"pull_request\" pipeline must each have either mergeable PRs, or the triggering PR must target the default branch and every participating repo's branch must be fully rebased on the repo's own default branch."
                 if pr is None and not repo.git_repo.is_ancestor(
                     repo.git_repo.commit(f"origin/{repo.default_branch}"),
-                    repo.git_repo.commit(self[repo].job_ref),
+                    repo.git_repo.commit(self[repo].job_commit),
                 ):
                     missing_prs_and_not_rebased.append(repo)
                 elif pr is not None and not pr.mergeable:
@@ -589,6 +596,15 @@ class ReposData:
         if fail:
             raise Exception("Invariants violated. See error messages above.")
 
+    def warn_missing_pr(self, repo, branch):
+        key = (repo, branch)
+        if key in self.missing_prs_warned:
+            return
+        logger.warning(
+            f"Repo {repo.github_path}: Unable to find PR for branch {branch}"
+        )
+        self.missing_prs_warned.add(key)
+
     async def pr(
         self,
         repo: Repo,
@@ -611,9 +627,7 @@ class ReposData:
                 data.pr = PRData.of_api_response(gh_pr)
                 initial_pr_number = data.pr.number
             else:
-                logger.warning(
-                    f"Repo {repo.github_path}: Unable to find PR for branch {branch}"
-                )
+                self.warn_missing_pr(repo, branch)
                 return None
         assert initial_pr_number is not None
         gh_pr = await GH.pr(repo.github_path, initial_pr_number)
@@ -626,18 +640,18 @@ class ReposData:
             exit(1)
         return data.pr
 
-    def output_job_refs(self, fname, repos):
+    def output_job_commits(self, fname, repos):
         with open(fname, "w") as f:
             for r in repos:
-                f.write(f"{r.dir_path}: {r.commit_of(self[r].job_ref)}\n")
+                f.write(f"{r.dir_path}: {r.commit_of(self[r].job_commit)}\n")
 
-    def output_base_refs(self, fname, repos):
+    def output_base_commits(self, fname, repos):
         with open(fname, "w") as f:
             for r in repos:
-                if self[r].base_ref is None:
+                if self[r].base_commit is None:
                     logger.warning(f"Repo {r.github_path} does not have a base commit.")
                     continue
-                f.write(f"{r.dir_path}: {r.commit_of(self[r].base_ref)}\n")
+                f.write(f"{r.dir_path}: {r.commit_of(self[r].base_commit)}\n")
 
 
 DATA = ReposData()
@@ -707,8 +721,8 @@ class Trigger:
     def non_default_trigger_pr_base(self):
         if self.pr is None:
             return None
-        if self.pr.base_ref and self.repo.default_branch != self.pr.base_ref:
-            return self.pr.base_ref
+        if self.pr.base_commit and self.repo.default_branch != self.pr.base_commit:
+            return self.pr.base_commit
         return None
 
 
@@ -724,7 +738,7 @@ def log_level(level_str):
 
 def add_common_args(parser):
     parser.add_argument(
-        "--debug-level",
+        "--log-level",
         choices=["DEBUG", "INFO", "WARN", "ERROR"],
         type=log_level,
         default="INFO",
@@ -804,11 +818,11 @@ def git_first_existing_choice(git_repo, choices):
 
 # checkout workspace for job build (not the reference)
 async def checkout_workspace_job(trigger):
-    job_ref = await DATA.workspace_job_ref(trigger)
+    job_commit = await DATA.workspace_job_commit(trigger)
     workspace_git = git.Repo(Workspace().repo.dir_path)
-    logger.info(f"Checking out {Workspace().repo}")
-    Workspace().repo.ensure_fetched(job_ref, depth=None)
-    workspace_git.git.checkout(job_ref)
+    logger.info(f"Checking out {Workspace().repo.github_path}")
+    Workspace().repo.ensure_fetched(job_commit, depth=None)
+    workspace_git.git.checkout(job_commit)
 
 
 async def make_checkout_workspace(parser, context, args):
@@ -858,15 +872,17 @@ async def make_config(parser, context, args):
     args = parser.parse_args(args)
     repos = Repos.make()
     trigger = await Trigger.of_args(repos.find_github_path, args)
-    await DATA.workspace_job_ref(trigger)  # just to initialize everything
-    await DATA.compute_job_refs(trigger, repos.repos)
+    await DATA.workspace_job_commit(trigger)  # just to initialize everything
+    await DATA.compute_job_commits(trigger, repos.repos)
     DATA.print()
-    DATA.output_job_refs(args.output_file_job, repos.repos)
+    DATA.output_job_commits(args.output_file_job, repos.repos)
 
     await DATA.check_invariants(trigger, repos.repos)
 
     github_output = (
-        open(args.output_file_github, "a") if args.output_file_github is not None else None
+        open(args.output_file_github, "a")
+        if args.output_file_github is not None
+        else None
     )
 
     trigger_pr = trigger.pr
@@ -874,15 +890,15 @@ async def make_config(parser, context, args):
         github_output.write(f"pr={trigger_pr.number}\n")
 
     if trigger.labels.compare:
-        base = await DATA.workspace_base_ref(trigger)
+        base = await DATA.workspace_base_commit(trigger)
         workspace_git = git.Repo(Workspace().repo.dir_path)
         workspace_git.git.checkout(base)
         pexpect.run("make -j nuke CONFIRM=yes")
         pexpect.run("make -j lightweight-clone")
         repos = Repos.make()
-        await DATA.compute_base_refs(trigger, repos.repos)
+        await DATA.compute_base_commits(trigger, repos.repos)
         DATA.print()
-        DATA.output_base_refs(args.output_file_base, repos.repos)
+        DATA.output_base_commits(args.output_file_base, repos.repos)
 
         if github_output is not None:
             github_output.write("compare=1\n")
