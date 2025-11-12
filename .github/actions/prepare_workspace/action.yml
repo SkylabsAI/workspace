@@ -10,13 +10,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # Use local version if changing workspace, otherwise checkout from main
-    - uses: ./.github/actions/initialize_workspace
-      if: github.repository == 'SkylabsAI/workspace'
-      with:
-        FM_CI_TOKEN: ${{ inputs.FM_CI_TOKEN }}
-    - uses: SkylabsAI/workspace/.github/actions/initialize_workspace@main
-      if: github.repository != 'SkylabsAI/workspace'
+    - uses: ./actions/initialize_workspace
       with:
         FM_CI_TOKEN: ${{ inputs.FM_CI_TOKEN }}
     - uses: actions/download-artifact@v5
