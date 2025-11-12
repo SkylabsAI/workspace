@@ -44,6 +44,7 @@ jobs:
       - name: "Checkout workspace (from workspace)"
         if: github.repository == 'SkylabsAI/workspace'
         uses: actions/checkout@v5
+      # Use local version if changing workspace, otherwise checkout from main
       - name: "Initialize workspace (from workspace)"
         if: github.repository == 'SkylabsAI/workspace'
         uses: ./.github/actions/initialize_workspace
