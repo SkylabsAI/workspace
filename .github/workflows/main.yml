@@ -23,7 +23,7 @@ env:
   DUNE_PROFILE: "br_timing"
   UV_LINK_MODE: "copy"
   ROCQ_LOG_PREFIX: bluerock
-  OPAM_PACKAGES: opam pin | grep -E -v "(/bluerock|rocq-test-suite|br_auto_tests_brick_pm)"
+  OPAM_PACKAGES: opam pin | grep /fmdeps/ | grep -v rocq-test-suite
 
 jobs:
   gen-job:
