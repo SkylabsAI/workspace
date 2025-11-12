@@ -3,16 +3,12 @@
   "name": "SkyLabs FM default",
   "image":
     "ghcr.io/skylabsai/workspace:fm-default",
-  // "mounts": [
-  //   {
-  //     "source": "${env:DUNE_CACHE_DOCKER}",
-  //     "target": "/home/coq/.cache/dune",
-  //     "type": "bind"
-  //   }
-  // ],
   "runArgs": [
     "--platform",
-    "linux/amd64"
+    "linux/amd64",
+    // We prefer --volume over "mounts" because it auto-creates the host folder.
+    "--volume",
+    "${localEnv:HOME}/.cache/remote_dune:/home/coq/.cache/dune:cached"
   ],
   "customizations": {
     "vscode": {
