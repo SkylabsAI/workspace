@@ -65,6 +65,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.CI_FILES_ARTIFACT }}
+          # Caveat: this strips the common prefix `workspace_checkout/.github` from file paths.
           path: |
             workspace_checkout/.github/actions/*
             workspace_checkout/.github/workflows/*
@@ -98,6 +99,7 @@ jobs:
       image: "ghcr.io/skylabsai/workspace:fm-default"
       options: "-v /cache:/cache:ro -v /home/coq/.ssh:/home/coq/.ssh -v /home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
     steps:
+      # Here and in other jobs, this is the inverse of "Upload actions and workflows", and it lets us find the correct actions under `./actions`.
       - name: "Download CI files"
         uses: actions/download-artifact@v5
         with:
