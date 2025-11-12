@@ -306,7 +306,6 @@ jobs:
           mkdir ${{ env.SCRATCHDIR }}/globs-job/
           find _build/ -type f -! -empty -name '*.glob.std*' > files_to_rsync
           rsync -a --prune-empty-dirs --files-from=files_to_rsync ./ ${{ env.SCRATCHDIR}}/globs-job/
-          ls -al ${{ env.SCRATCHDIR }}/globs-job
           # 
           dune exec -- coqc-perf.extract-all _build/default perf-data
           dune exec -- hint-data.extract-all ${NJOBS} perf-data
@@ -358,7 +357,6 @@ jobs:
           mkdir ${{ env.SCRATCHDIR }}/globs-base/
           find _build/ -type f -! -empty -name '*.glob.std*' > files_to_rsync
           rsync -a --prune-empty-dirs --files-from=files_to_rsync ./ ${{ env.SCRATCHDIR}}/globs-base/
-          ls -al ${{ env.SCRATCHDIR }}/globs-job
           # 
           dune exec -- coqc-perf.extract-all _build/default perf-data
           dune exec -- hint-data.extract-all ${NJOBS} perf-data
@@ -412,11 +410,13 @@ jobs:
           # python3 support/fm-perf/post_fm_perf.py --access-token ${PROOF_PERF_TOKEN} --project-id 74911021 --mr-id 3913 -f ${{ env.SCRATCHDIR }}/perf_analysis_gitlab.md --pipe-url "https://gitlab.com/skylabs_ai/FM/auto/-/pipelines/2116778517"
 
           # Code Quality diff
-          find ${{ env.SCRATCHDIR }}/globs-job -type f -! -empty -name '*.glob.std*' > globs-job
-          find ${{ env.SCRATCHDIR }}/globs-base -type f -! -empty -name '*.glob.std*' > globs-base
+          mkdir -p ${{ env.SCRATCHDIR }}/globs-job/_build/default
+          find ${{ env.SCRATCHDIR }}/globs-job -type f -! -empty -name '*.glob.std*' > ${{ env.SCRATCHDIR }}/globs-job/_build/default/files
+          mkdir -p ${{ env.SCRATCHDIR }}/globs-base/_build/default
+          find ${{ env.SCRATCHDIR }}/globs-base -type f -! -empty -name '*.glob.std*' > ${{ env.SCRATCHDIR }}/globs-base/_build/default/files
           (dune exec -- coqc-perf.code-quality-diff \
-            --before-globs-from-file globs-base \
-            --after-globs-from-file globs-job \
+            --before-globs-from-file ${{ env.SCRATCHDIR }}/globs-base/_build/default/files \
+            --after-globs-from-file ${{ env.SCRATCHDIR }}/globs-job/_build/default/files \
             --before-dune ${{ env.SCRATCHDIR }}/dune-log-base.json \
             --after-dune ${{ env.SCRATCHDIR }}/dune-log-job.json \
               >> $GITHUB_STEP_SUMMARY) \
