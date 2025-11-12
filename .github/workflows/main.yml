@@ -306,7 +306,7 @@ jobs:
           mkdir ${{ env.SCRATCHDIR }}/globs-job/
           find _build/ -type f -! -empty -name '*.glob.std*' > files_to_rsync
           rsync -a --prune-empty-dirs --files-from=files_to_rsync ./ ${{ env.SCRATCHDIR}}/globs-job/
-          # 
+          #
           dune exec -- coqc-perf.extract-all _build/default perf-data
           dune exec -- hint-data.extract-all ${NJOBS} perf-data
           du -hs _build
@@ -357,7 +357,7 @@ jobs:
           mkdir ${{ env.SCRATCHDIR }}/globs-base/
           find _build/ -type f -! -empty -name '*.glob.std*' > files_to_rsync
           rsync -a --prune-empty-dirs --files-from=files_to_rsync ./ ${{ env.SCRATCHDIR}}/globs-base/
-          # 
+          #
           dune exec -- coqc-perf.extract-all _build/default perf-data
           dune exec -- hint-data.extract-all ${NJOBS} perf-data
           du -hs _build
