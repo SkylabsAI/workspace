@@ -76,7 +76,6 @@ jobs:
   # MR merging can require this check to succeed, to depend on all of CI.
   # MAINTENANCE NOTE: Must depend on all "actual" jobs
   workspace-success:
-    name: "Check if CI succeeded"
     needs: [opam-build, full-build, python-build]
     if: always()
     runs-on: ubuntu-latest
@@ -104,6 +103,9 @@ jobs:
     container:
       image: "ghcr.io/skylabsai/workspace:fm-default"
       options: "-v /cache:/cache:ro -v /home/coq/.ssh:/home/coq/.ssh -v /home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
+      env:
+        NJOBS: "16"
+        BASH_ENV: "/home/coq/.profile"
     steps:
       # Here and in other jobs, this is the inverse of "Upload actions and workflows", and it lets us find the correct actions under `./actions`.
       - name: "Download CI files"
