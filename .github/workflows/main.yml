@@ -26,7 +26,9 @@ env:
   OPAM_PACKAGES: opam pin | grep /fmdeps/ | grep -v rocq-test-suite
 
 jobs:
+
   gen-job:
+    name: "Choose commits to compare"
     runs-on:
       group: FM
     container:
@@ -71,7 +73,10 @@ jobs:
             workspace_checkout/.github/workflows/*
 
 
+  # MR merging can require this check to succeed, to depend on all of CI.
+  # MAINTENANCE NOTE: Must depend on all "actual" jobs
   workspace-success:
+    name: "Check if CI succeeded"
     needs: [opam-build, full-build, python-build]
     if: always()
     runs-on: ubuntu-latest
@@ -86,7 +91,8 @@ jobs:
           echo "Checking that python-build succeeded"
           ${{ needs.python-build.result == 'success' && 'true' || 'false' }}
 
-
+  # Regular jobs [should] follow the template of `opam-build` up to
+  # `checkout_workspace`, and then add their payload.
   opam-build:
     needs: gen-job
     defaults:
@@ -231,6 +237,7 @@ jobs:
           uv --directory ${{ matrix.project-dir }} run task ${{ matrix.task }}
 
 
+  # Unlike opam-build, this job invokes checkout_workspace twice not once.
   full-build:
     needs: gen-job
     defaults:

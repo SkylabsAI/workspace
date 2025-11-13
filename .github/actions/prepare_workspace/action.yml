@@ -1,5 +1,5 @@
 name: "Prepare to Checkout Workspace Directory"
-description: ""
+description: "Invoked exactly once per job. Depends on 'Download CI files' step."
 
 inputs:
   FM_CI_TOKEN:
