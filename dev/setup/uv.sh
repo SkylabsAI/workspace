@@ -12,5 +12,5 @@ if [[ -n $(uv run -- bash -c 'echo $VIRTUAL_ENV') ]]; then
 fi
 
 echo "Setting up a new Python virtual environment."
-echo "Created in: .venv"
 uv venv --quiet --python 3.11
+echo "Created in: $(realpath .venv)"
