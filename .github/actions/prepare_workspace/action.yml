@@ -1,5 +1,5 @@
 name: "Prepare to Checkout Workspace Directory"
-description: ""
+description: "Invoked exactly once per job. Depends on 'Download CI files' step."
 
 inputs:
   FM_CI_TOKEN:
@@ -10,9 +10,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # TODO branches here are a problem
-    - id: initialize
-      uses: SkylabsAI/workspace/.github/actions/initialize_workspace@main
+    - uses: ./actions/initialize_workspace
       with:
         FM_CI_TOKEN: ${{ inputs.FM_CI_TOKEN }}
     - uses: actions/download-artifact@v5

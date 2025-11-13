@@ -1,5 +1,5 @@
 name: "Checkout Workspace Directory"
-description: ""
+description: "Can be invoked multiple times. Depends on `prepare_workspace`."
 
 inputs:
   CHECKOUT_BASE:

@@ -23,10 +23,12 @@ env:
   DUNE_PROFILE: "br_timing"
   UV_LINK_MODE: "copy"
   ROCQ_LOG_PREFIX: bluerock
-  OPAM_PACKAGES: opam pin | grep -E -v "(/bluerock|rocq-test-suite|br_auto_tests_brick_pm)"
+  OPAM_PACKAGES: opam pin | grep /fmdeps/ | grep -v rocq-test-suite
 
 jobs:
+
   gen-job:
+    name: "Choose commits to compare"
     runs-on:
       group: FM
     container:
@@ -44,6 +46,7 @@ jobs:
       - name: "Checkout workspace (from workspace)"
         if: github.repository == 'SkylabsAI/workspace'
         uses: actions/checkout@v5
+      # Use local version if changing workspace, otherwise checkout from main
       - name: "Initialize workspace (from workspace)"
         if: github.repository == 'SkylabsAI/workspace'
         uses: ./.github/actions/initialize_workspace
@@ -64,12 +67,16 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.CI_FILES_ARTIFACT }}
+          # Caveat: this strips the common prefix `workspace_checkout/.github` from file paths.
           path: |
             workspace_checkout/.github/actions/*
             workspace_checkout/.github/workflows/*
 
 
+  # MR merging can require this check to succeed, to depend on all of CI.
+  # MAINTENANCE NOTE: Must depend on all "actual" jobs
   workspace-success:
+    name: "Check if CI succeeded"
     needs: [opam-build, full-build, python-build]
     if: always()
     runs-on: ubuntu-latest
@@ -84,7 +91,8 @@ jobs:
           echo "Checking that python-build succeeded"
           ${{ needs.python-build.result == 'success' && 'true' || 'false' }}
 
-
+  # Regular jobs [should] follow the template of `opam-build` up to
+  # `checkout_workspace`, and then add their payload.
   opam-build:
     needs: gen-job
     defaults:
@@ -97,6 +105,7 @@ jobs:
       image: "ghcr.io/skylabsai/workspace:fm-default"
       options: "-v /cache:/cache:ro -v /home/coq/.ssh:/home/coq/.ssh -v /home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
     steps:
+      # Here and in other jobs, this is the inverse of "Upload actions and workflows", and it lets us find the correct actions under `./actions`.
       - name: "Download CI files"
         uses: actions/download-artifact@v5
         with:
@@ -228,6 +237,7 @@ jobs:
           uv --directory ${{ matrix.project-dir }} run task ${{ matrix.task }}
 
 
+  # Unlike opam-build, this job invokes checkout_workspace twice not once.
   full-build:
     needs: gen-job
     defaults:
@@ -306,7 +316,7 @@ jobs:
           mkdir ${{ env.SCRATCHDIR }}/globs-job/
           find _build/ -type f -! -empty -name '*.glob.std*' > files_to_rsync
           rsync -a --prune-empty-dirs --files-from=files_to_rsync ./ ${{ env.SCRATCHDIR}}/globs-job/
-          # 
+          #
           dune exec -- coqc-perf.extract-all _build/default perf-data
           dune exec -- hint-data.extract-all ${NJOBS} perf-data
           du -hs _build
@@ -357,7 +367,7 @@ jobs:
           mkdir ${{ env.SCRATCHDIR }}/globs-base/
           find _build/ -type f -! -empty -name '*.glob.std*' > files_to_rsync
           rsync -a --prune-empty-dirs --files-from=files_to_rsync ./ ${{ env.SCRATCHDIR}}/globs-base/
-          # 
+          #
           dune exec -- coqc-perf.extract-all _build/default perf-data
           dune exec -- hint-data.extract-all ${NJOBS} perf-data
           du -hs _build
