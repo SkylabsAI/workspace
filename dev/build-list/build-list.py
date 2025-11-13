@@ -1,4 +1,11 @@
-#! /usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = "==3.12.*"
+# dependencies = [
+#     "pyyaml>=6.0.3",
+#     "sexpdata>=1.0.2",
+# ]
+# ///
 
 import yaml
 import os
@@ -9,19 +16,19 @@ import sexpdata
 
 def replace_extension(fn, is_alias):
     (name, ext) = os.path.splitext(fn)
-    if is_alias:
-        if ext == '.t':
+    match ext:
+        case '.t' if is_alias:
             return name
-        else:
+        case _ if is_alias:
             return fn
-    elif ext == '.v':
-        # name = os.path.join('_build',  name)
-        return name + ".vo"
-    elif ext in ['.cpp','.hpp']:
-        # name = os.path.join('_build', name)
-        return name + '_' + ext[1:] + '.vo'
-    else:
-        return fn
+        case '.v':
+            # name = os.path.join('_build',  name)
+            return name + ".vo"
+        case '.cpp' | '.hpp':
+            # name = os.path.join('_build', name)
+            return name + '_' + ext[1:] + '.vo'
+        case _:
+            return fn
 
 def node(tag, args):
     return [sexpdata.Symbol(tag)] + args
@@ -50,7 +57,7 @@ def make_alias_target(tgt_name, tgts, relative_to):
         tgt = replace_extension(tgt, is_alias=tgt_type in ['@','@@'])
         tgt_rel_path = os.path.relpath(tgt, relative_to)
         if tgt_type in ['@', '@@']:
-            deps.append(node('alias', [alias + tgt_rel_path]))
+            deps.append(node('alias', [tgt_type + tgt_rel_path]))
         elif tgt_type == 'pattern':
             tgt = os.path.join(tgt, '*')
             deps.append(node('glob_files_rec', [tgt_rel_path]))
