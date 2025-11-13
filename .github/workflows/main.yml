@@ -76,7 +76,6 @@ jobs:
   # MR merging can require this check to succeed, to depend on all of CI.
   # MAINTENANCE NOTE: Must depend on all "actual" jobs
   workspace-success:
-    name: "Check if CI succeeded"
     needs: [opam-build, full-build, python-build]
     if: always()
     runs-on: ubuntu-latest
