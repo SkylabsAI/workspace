@@ -146,12 +146,17 @@ jobs:
           FM_CI_TOKEN: ${{ secrets.FM_CI_TOKEN }}
       - name: "Checkout Job Commits"
         uses: ./actions/checkout_workspace
-      - name: "Build everything"
+      - name: "Build stage1"
         run: |
           source ${{ env.BOILERPLATE }}
           make -s -j${NJOBS} stage1
-          dune build
-          dune b @fmdeps/install @psi/install
+      - name: "Dune build"
+        run: |
+          source ${{ env.BOILERPLATE }}
+          dune build @@default @fmdeps/install @psi/install
+      - name: "brick-agent"
+        run: |
+          source ${{ env.BOILERPLATE }}
           export PATH=$(pwd)/_build/install/default/bin:$PATH
           cd psi/backend/brick_agents
           uv run code-proof-agent --task-file ../../data/brick_groundtruth/examples/loopcorpus/tasks.yaml
