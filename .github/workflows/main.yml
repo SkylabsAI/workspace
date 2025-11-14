@@ -186,9 +186,20 @@ jobs:
 
       - name: "Upload results to S3"
         run: |
+          source ${{ env.BOILERPLATE }}
           echo "Installing AWS CLI..."
-          uv pip install --system awscli
+          
+          echo "Creating virtual environment in ./.venv ..."
+          # Create a venv in the current WORKDIR (e.g., /tmp/build-dir/.venv)
+          uv venv .venv
+          
+          # Activate the venv
+          source .venv/bin/activate
 
+          echo "Installing AWS CLI into ./.venv ..."
+          # Install awscli into the newly activated venv
+          uv pip install awscli
+          
           # The source path is relative to the default working-directory
           # which is ${{ env.WORKDIR }}
           
