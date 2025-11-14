@@ -186,10 +186,15 @@ jobs:
 
       - name: "Upload results to S3"
         run: |
+          echo "Installing AWS CLI..."
+          uv pip install awscli
+          
           # The source path is relative to the default working-directory
           # which is ${{ env.WORKDIR }}
+          
           echo "Uploading files from psi/backend/brick_agents/results/ ..."
           
+
           aws s3 sync psi/backend/brick_agents/results/ s3://${{ secrets.AWS_S3_BUCKET_NAME }}/psi-results/latest/ --delete
           
           echo "Successfully uploaded PSI results to s3://${{ secrets.AWS_S3_BUCKET_NAME }}/psi-results/latest/"
