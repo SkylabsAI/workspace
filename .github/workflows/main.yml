@@ -106,6 +106,7 @@ jobs:
       env:
         NJOBS: "16"
         BASH_ENV: "/home/coq/.profile"
+        DUNE_CACHE: "enabled"
     steps:
       # Here and in other jobs, this is the inverse of "Upload actions and workflows", and it lets us find the correct actions under `./actions`.
       - name: "Download CI files"
