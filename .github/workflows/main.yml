@@ -160,6 +160,12 @@ jobs:
         run: |
           source ${{ env.BOILERPLATE }}
           dune build @@default @fmdeps/install @psi/install
+
+      - name: "Create .env file for PSI"
+        run: |
+          # Write the secret to the .env file
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > psi/backend/.env
+
       - name: "brick-agent"
         run: |
           source ${{ env.BOILERPLATE }}
