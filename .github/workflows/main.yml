@@ -134,8 +134,9 @@ jobs:
       group: FM
     
     permissions:
-      id-token: write # Allows the workflow to get a JWT token
-      contents: read  # Allows the workflow to check out code
+      id-token: write # For AWS
+      contents: read  
+      packages: read # to pull from ghcr.io
 
     container:
       image: "ghcr.io/skylabsai/workspace:fm-default"
