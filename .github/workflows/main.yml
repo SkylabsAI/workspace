@@ -187,8 +187,8 @@ jobs:
       - name: "Upload results to S3"
         run: |
           echo "Installing AWS CLI..."
-          uv pip install awscli
-          
+          uv pip install --system awscli
+
           # The source path is relative to the default working-directory
           # which is ${{ env.WORKDIR }}
           
