@@ -132,6 +132,11 @@ jobs:
         working-directory: ${{ env.WORKDIR }}
     runs-on:
       group: FM
+    
+    permissions:
+      id-token: write # Allows the workflow to get a JWT token
+      contents: read  # Allows the workflow to check out code
+
     container:
       image: "ghcr.io/skylabsai/workspace:fm-default"
       options: "-v /cache:/cache:ro -v /home/coq/.ssh:/home/coq/.ssh -v /home/coq/dune_nfs/dune_cache:/home/coq/.cache --security-opt seccomp=/home/coq/seccomp.json"
@@ -159,7 +164,25 @@ jobs:
           source ${{ env.BOILERPLATE }}
           export PATH=$(pwd)/_build/install/default/bin:$PATH
           cd psi/backend/brick_agents
-          uv run code-proof-agent --task-file ../../data/brick_groundtruth/examples/loopcorpus/tasks.yaml
+          mkdir results
+          uv run code-proof-agent --task-file ../../data/brick_groundtruth/examples/loopcorpus/tasks.yaml --output-dir results
+          ls -l results
+      - name: "Configure AWS Credentials"
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # Use the same OIDC role ARN secret from your other workflow
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: "Upload results to S3"
+        run: |
+          # The source path is relative to the default working-directory
+          # which is ${{ env.WORKDIR }}
+          echo "Uploading files from psi/backend/brick_agents/results/ ..."
+          
+          aws s3 sync psi/backend/brick_agents/results/ s3://${{ secrets.AWS_S3_BUCKET_NAME }}/psi-results/latest/ --delete
+          
+          echo "Successfully uploaded PSI results to s3://${{ secrets.AWS_S3_BUCKET_NAME }}/psi-results/latest/"
 
 
   python-gen-job:
