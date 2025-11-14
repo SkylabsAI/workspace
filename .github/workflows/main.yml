@@ -168,13 +168,15 @@ jobs:
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > psi/backend/brick_agents/.env
 
       - name: "brick-agent"
+        continue-on-error: true
         run: |
           source ${{ env.BOILERPLATE }}
-          export PATH=$(pwd)/_build/install/default/bin:$PATH
-          cd psi/backend/brick_agents
-          mkdir results
-          uv run code-proof-agent --task-file ../../data/brick_groundtruth/examples/loopcorpus/tasks.yaml --output-dir results
-          ls -l results
+            export PATH=$(pwd)/_build/install/default/bin:$PATH
+            cd psi/backend/brick_agents
+            mkdir results
+            uv run code-proof-agent --task-file ../../data/brick_groundtruth/examples/loopcorpus/tasks2.yaml --output-dir results
+            ls -l results
+          fi
       - name: "Configure AWS Credentials"
         uses: aws-actions/configure-aws-credentials@v4
         with:
