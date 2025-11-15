@@ -6,4 +6,4 @@
   (target dune.inc)
   (deps (:yml (glob_files *.yml)) (:script build-list.py))
   (action
-   (system "uv run --with pyyaml --with sexpdata --python 3.11 --quiet %{script} -o %{target} %{yml} --relative-to='../../dyn' --root=../.."))))
+   (system "./%{script} -o %{target} %{yml} --relative-to='../../dyn' --root=../.."))))
