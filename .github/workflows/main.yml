@@ -83,15 +83,14 @@ jobs:
       - name: "Check successes"
         shell: bash
         run: |
-          true
-  # echo "Checking that opam-build succeeded"
-  # ${{ needs.opam-build.result == 'success' && 'true' || 'false' }}
-  # echo "Checking that full-build succeeded"
-  # ${{ needs.full-build.result == 'success' && 'true' || 'false' }}
-  # echo "Checking that python-build succeeded"
-  # ${{ needs.python-build.result == 'success' && 'true' || 'false' }}
-  # echo "Checking that build-brick-docs succeeded"
-  # ${{ needs.build-brick-docs.result == 'success' && 'true' || 'false' }}
+          echo "Checking that opam-build succeeded"
+          ${{ needs.opam-build.result == 'success' && 'true' || 'false' }}
+          echo "Checking that full-build succeeded"
+          ${{ needs.full-build.result == 'success' && 'true' || 'false' }}
+          echo "Checking that python-build succeeded"
+          ${{ needs.python-build.result == 'success' && 'true' || 'false' }}
+          echo "Checking that build-brick-docs succeeded"
+          ${{ needs.build-brick-docs.result == 'success' && 'true' || 'false' }}
 
   # Regular jobs [should] follow the template of `opam-build` up to
   # `checkout_workspace`, and then add their payload.
