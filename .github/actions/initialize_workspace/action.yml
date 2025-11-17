@@ -39,11 +39,6 @@ runs:
       shell: sh
       run: |
         echo GITHUB_URL="https://${{ github.actor }}:${{ inputs.FM_CI_TOKEN }}@github.com/" >> "$GITHUB_ENV"
-    - name: "Install sexpdata python package"
-      shell: sh
-      run: |
-        source /home/coq/.pyenv/bin/activate
-        pip install sexpdata==1.0.2
     - name: "Create boilerplate.sh"
       shell: sh
       run: |
