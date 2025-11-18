@@ -4,6 +4,7 @@ auto/
 brick-libcpp/
 ci-backfire/
 fm-ci/
+ci/
 fm-tools/
 skylabs-fm/
 vendored/
