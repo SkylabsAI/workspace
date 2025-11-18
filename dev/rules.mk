@@ -23,12 +23,8 @@ dev-check-ver-sed:
 # Setting up the development environment.
 
 .PHONY: dev-setup
-dev-setup: dev-check-ver dev-setup-opam dev-setup-uv
+dev-setup: dev-check-ver dev-setup-opam
 
 .PHONY: dev-setup-opam
 dev-setup-opam: dev/setup/opam.sh dev-check-ver-opam
-	$(Q)./$<
-
-.PHONY: dev-setup-uv
-dev-setup-uv: dev/setup/uv.sh dev-check-ver-uv
 	$(Q)./$<

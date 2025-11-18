@@ -35,12 +35,12 @@ make bluerock-clone -j  # Cloning (private) BlueRock sub-repos, mostly for CI.
 
 ```sh
 make dev-check-ver      # Check system deps.
-make dev-setup          # Sets up a suitable opam switch / Python venv.
+make dev-setup          # Setup the dev environment (opam switch, ...).
 make update-br-fm-deps  # Install necessary dependencies.
 ```
 
 Note that you might need to run either of the following commands to enable the
-correct opam switch and Python environment locally.
+correct development environment locally (opam switch, ...).
 ```sh
 source dev/activate.sh  # Enable the development environment.
 ```
