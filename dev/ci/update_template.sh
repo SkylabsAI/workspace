@@ -13,4 +13,4 @@ if [[ $# -ne 0 ]]; then
 fi
 
 # Update the CI config on all checked-out sub-repositories.
-make loop-subrepos LOOP_COMMAND="dev/ci/update_template_command.sh"
+make loop LOOP_COMMAND="dev/ci/update_template_command.sh"
