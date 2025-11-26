@@ -1,0 +1,36 @@
+# This file defines coarse-grain dependencies between repositories, used to
+# determine what jobs need to be run in CI. All repositories of the workspace
+# must be covered by this configuration, either directly in the [repos-deps]
+# section, or indirectly (via a group) in the [groups-deps] section.
+#
+# The values in the [groups-deps] and [repos-deps] sections are of the same
+# form, and consist of a record with two (optional) fields:
+# - repos - declaring a list of repositories as dependency (empty by default),
+# - groups - declaring a list of groups as dependencies (empty by default).
+
+# Defining groups of repositories, by taking all workspace repositories whose
+# path match the associated regular expression. Note that groups should not
+# intersect.
+[ci-groups]
+vendored = "fmdeps/vendored/*"
+bluerock = "bluerock/*"
+psi = "psi/*"
+
+# Specifications of dependencies for each of the group defined above.
+[groups-deps]
+vendored = {repos = ["workspace", "ci", "fm-ci"]}
+bluerock = {repos = ["auto"]}
+psi = {repos = ["skylabs-fm"]}
+
+# Specifications of the dependencies for all repositories not in a group. The
+# repositories are identified by their name, without the "SkylabsAI/" prefix.
+[repos-deps]
+workspace = {}
+ci = {}
+fm-ci = {}
+BRiCk = {groups = ["vendored"]}
+auto = {repos = ["BRiCk"]}
+brick-libcpp = {repos = ["auto"]}
+fm-tools = {repos = ["auto"]}
+skylabs-fm = {repos = ["auto"]}
+auto-docs = {repos = ["fm-tools"]}
