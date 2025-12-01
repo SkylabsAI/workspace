@@ -19,5 +19,5 @@ fi
 
 REPO_HASH=$(grep "^${REPO_DIR}: " ${COMMITS_FILE} | cut -d ' ' -f 2)
 
-git -C "${REPO_DIR}" fetch --depth 1 --quiet origin "${REPO_HASH}"
+git -C "${REPO_DIR}" fetch --deepen 1 --quiet origin "${REPO_HASH}"
 git -C "${REPO_DIR}" -c advice.detachedHead=false checkout "${REPO_HASH}"
