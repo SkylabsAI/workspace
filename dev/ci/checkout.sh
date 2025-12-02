@@ -24,7 +24,7 @@ if [[ ! -f "${COMMITS_FILE}" ]]; then
   exit 1
 fi
 
-if [[ "$(make loop LOOP_COMMAND=echo | wc -l)" != "1" ]]; then
+if [[ -z "${DO_NOT_CLONE}" && "$(make loop LOOP_COMMAND=echo | wc -l)" != "1" ]]; then
   echo "Error: sub-repositories are already cloned."
   exit 1
 fi
@@ -35,7 +35,9 @@ export LOOP_COMMAND="dev/ci/checkout_command.sh"
 make loop-workspace
 
 # Clone all the sub-repos (shallowly).
-make clone -j CLONE_ARGS="--depth 1 --quiet"
+if [[ -z "${DO_NOT_CLONE}" ]]; then
+    make clone -j CLONE_ARGS="--depth 1 --quiet"
+fi
 
 # Checkout the specified commit on the sub-repositories.
 make loop-subrepos -j
