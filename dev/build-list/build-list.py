@@ -48,23 +48,54 @@ def parse_target(fn):
         tgt_type = 'file'
     return (tgt_type, os.path.realpath(fn))
 
+def invalid_target_error(tgt, relative_to):
+    print(f'invalid target {tgt}')
+    print(f'expected one of:')
+    print(f'  - a file path relative to {relative_to}')
+    print(f'  - a glob pattern ending with *')
+    print(f'  - a verbatim dune construct:')
+    print(f'    "verbatim: ["rule", "arg1", "arg2"] "')
+    print(f'    will insert "(rule arg1 arg2)" in the dune file')
+    sys.exit(-1)
+
+def list_to_node(sexp):
+    if isinstance(sexp, str):
+        return sexp
+    elif isinstance(sexp, list):
+        hd = sexp[0]
+        args = [ list_to_node(a) for a in sexp[1:] ]
+        return node(hd, args)
+    else:
+        print(f'invalid sexp: {sexp}')
+        sys.exit(-1)
+
 def make_alias_target(tgt_name, tgts, relative_to):
     deps = []
     tgts = tgts or []
     for init_tgt in tgts:
-        (tgt_type, tgt) = parse_target(init_tgt)
-        pwd = os.path.realpath('.')
-        tgt = replace_extension(tgt, is_alias=tgt_type in ['@','@@'])
-        tgt_rel_path = os.path.relpath(tgt, relative_to)
-        if tgt_type == '@':
-            deps.append(node('alias', [tgt_rel_path]))
-        elif tgt_type == '@@':
-            deps.append(node('alias_rec', [tgt_rel_path]))
-        elif tgt_type == 'pattern':
-            tgt = os.path.join(tgt, '*')
-            deps.append(node('glob_files_rec', [tgt_rel_path]))
+        if isinstance(init_tgt, str):
+            (tgt_type, tgt) = parse_target(init_tgt)
+            pwd = os.path.realpath('.')
+            tgt = replace_extension(tgt, is_alias=tgt_type in ['@','@@'])
+            tgt_rel_path = os.path.relpath(tgt, relative_to)
+            if tgt_type == '@':
+                deps.append(node('alias', [tgt_rel_path]))
+            elif tgt_type == '@@':
+                deps.append(node('alias_rec', [tgt_rel_path]))
+            elif tgt_type == 'pattern':
+                tgt = os.path.join(tgt, '*')
+                deps.append(node('glob_files_rec', [tgt_rel_path]))
+            else:
+                deps.append(node('file', [tgt_rel_path]))
+        elif (    isinstance(init_tgt, dict)
+              and len(init_tgt) == 1 ):
+            verb = init_tgt.get('verbatim') or init_tgt.get('verb')
+            if not verb:
+                invalid_target_error(init_tgt, relative_to)
+                return None
+            deps.append(list_to_node(verb))
         else:
-            deps.append(node('file', [tgt_rel_path]))
+            invalid_target_error(init_tgt, relative_to)
 
     name = node('name', [tgt_name])
     deps = node('deps', deps)
