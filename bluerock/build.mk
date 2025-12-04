@@ -1,5 +1,5 @@
 BHV_DIR = bluerock/bhv
-GITLAB_URL="${GITHUB_URL}SkylabsAI/bluerock."
+GITLAB_URL="${GITHUB_URL}SkyLabsAI/bluerock."
 BHV_VENV = ${BHV_DIR}/.venv
 
 .PHONY: ast-prepare-bhv

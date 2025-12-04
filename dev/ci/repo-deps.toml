@@ -23,7 +23,7 @@ bluerock = {repos = ["auto"]}
 psi = {repos = ["skylabs-fm"]}
 
 # Specifications of the dependencies for all repositories not in a group. The
-# repositories are identified by their name, without the "SkylabsAI/" prefix.
+# repositories are identified by their name, without the "SkyLabsAI/" prefix.
 [repos-deps]
 workspace = {}
 ci = {}

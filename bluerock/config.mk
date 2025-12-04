@@ -4,5 +4,5 @@
 # - FMDEPS_DIR: directory under fmdeps/ in which the repo is cloned.
 # - MODE: either "upstream", "owned", or "downstream".
 
-BRDEPS += SkylabsAI/bluerock.NOVA:skylabs-proof:NOVA/:downstream
-BRDEPS += SkylabsAI/bluerock.bhv:skylabs-main:bhv/:downstream
+BRDEPS += SkyLabsAI/bluerock.NOVA:skylabs-proof:NOVA/:downstream
+BRDEPS += SkyLabsAI/bluerock.bhv:skylabs-main:bhv/:downstream

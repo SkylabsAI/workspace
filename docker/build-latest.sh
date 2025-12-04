@@ -14,7 +14,7 @@ INITIAL_PWD="$PWD"
 
 rm -rf "${CLONE_DIR}"
 
-git clone git@github.com:SkylabsAI/skylabs-fm.git "${CLONE_DIR}"
+git clone git@github.com:SkyLabsAI/skylabs-fm.git "${CLONE_DIR}"
 
 cd "${CLONE_DIR}"
 git log --pretty=tformat:'%H' -n 1 > skylabs-fm_commit_hash.txt
