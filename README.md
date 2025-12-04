@@ -18,7 +18,7 @@ potentially many copies of the workspace, in the form of `git` work-trees.
 First, you need to clone the workspace repository.
 ```sh
 mkdir -p $HOME/dev && cd $HOME/dev                # Pick a suitable directory.
-git clone git@github.com:SkylabsAI/workspace.git  # Clone the workspace.
+git clone git@github.com:SkyLabsAI/workspace.git  # Clone the workspace.
 cd workspace                                      # Move to the workspace.
 ```
 

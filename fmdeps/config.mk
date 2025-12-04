@@ -5,25 +5,25 @@
 # - MODE: either "upstream", "owned", or "downstream".
 
 # Auxiliary FM repositories.
-FMDEPS += SkylabsAI/BRiCk:main:BRiCk/:owned
-FMDEPS += SkylabsAI/auto-docs:main:auto-docs/:owned
-FMDEPS += SkylabsAI/auto:main:auto/:owned
-FMDEPS += SkylabsAI/brick-libcpp:main:brick-libcpp/:owned
-FMDEPS += SkylabsAI/fm-tools:main:fm-tools/:owned
-FMDEPS += SkylabsAI/skylabs-fm:main:skylabs-fm/:owned
+FMDEPS += SkyLabsAI/BRiCk:main:BRiCk/:owned
+FMDEPS += SkyLabsAI/auto-docs:main:auto-docs/:owned
+FMDEPS += SkyLabsAI/auto:main:auto/:owned
+FMDEPS += SkyLabsAI/brick-libcpp:main:brick-libcpp/:owned
+FMDEPS += SkyLabsAI/fm-tools:main:fm-tools/:owned
+FMDEPS += SkyLabsAI/skylabs-fm:main:skylabs-fm/:owned
 
 # Infrastructure / CI repositories.
-FMDEPS += SkylabsAI/fm-ci:main:fm-ci/:owned
-FMDEPS += SkylabsAI/ci:main:ci/:owned
+FMDEPS += SkyLabsAI/fm-ci:main:fm-ci/:owned
+FMDEPS += SkyLabsAI/ci:main:ci/:owned
 
 # Vendored repositories.
-FMDEPS += SkylabsAI/elpi:skylabs-master:vendored/elpi/:upstream
-FMDEPS += SkylabsAI/rocq-elpi:skylabs-master:vendored/rocq-elpi/:upstream
-FMDEPS += SkylabsAI/rocq-equations:skylabs-main:vendored/rocq-equations/:upstream
-FMDEPS += SkylabsAI/rocq-ext-lib:skylabs-master:vendored/rocq-ext-lib/:upstream
-FMDEPS += SkylabsAI/rocq-iris:skylabs-master:vendored/rocq-iris/:upstream
-FMDEPS += SkylabsAI/rocq-lsp:skylabs-main:vendored/rocq-lsp/:upstream
-FMDEPS += SkylabsAI/rocq-stdlib:skylabs-master:vendored/rocq-stdlib/:upstream
-FMDEPS += SkylabsAI/rocq-stdpp:skylabs-master:vendored/rocq-stdpp/:upstream
-FMDEPS += SkylabsAI/rocq:skylabs-master:vendored/rocq/:upstream
-FMDEPS += SkylabsAI/vsrocq:skylabs-main:vendored/vsrocq/:upstream
+FMDEPS += SkyLabsAI/elpi:skylabs-master:vendored/elpi/:upstream
+FMDEPS += SkyLabsAI/rocq-elpi:skylabs-master:vendored/rocq-elpi/:upstream
+FMDEPS += SkyLabsAI/rocq-equations:skylabs-main:vendored/rocq-equations/:upstream
+FMDEPS += SkyLabsAI/rocq-ext-lib:skylabs-master:vendored/rocq-ext-lib/:upstream
+FMDEPS += SkyLabsAI/rocq-iris:skylabs-master:vendored/rocq-iris/:upstream
+FMDEPS += SkyLabsAI/rocq-lsp:skylabs-main:vendored/rocq-lsp/:upstream
+FMDEPS += SkyLabsAI/rocq-stdlib:skylabs-master:vendored/rocq-stdlib/:upstream
+FMDEPS += SkyLabsAI/rocq-stdpp:skylabs-master:vendored/rocq-stdpp/:upstream
+FMDEPS += SkyLabsAI/rocq:skylabs-master:vendored/rocq/:upstream
+FMDEPS += SkyLabsAI/vsrocq:skylabs-main:vendored/vsrocq/:upstream

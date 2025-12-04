@@ -5,7 +5,7 @@ Q=@
 GITHUB_URL ?= git@github.com:
 
 # URL for the workspace repository (this repository).
-WORKSPACE_ON_GITHUB = ${GITHUB_URL}SkylabsAI/workspace.git
+WORKSPACE_ON_GITHUB = ${GITHUB_URL}SkyLabsAI/workspace.git
 
 # Pick default bash on MacOS, even if it's installed with Homebrew.
 SHELL := $(shell which bash)
@@ -84,7 +84,7 @@ pull: workspace-pull
 
 .PHONY: workspace-show-config
 workspace-show-config:
-	@echo "SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./ owned"
+	@echo "SkyLabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./ owned"
 
 .PHONY: show-config
 show-config: workspace-show-config $(patsubst %,%-show-config,${SUBREPO_DIRS})
@@ -100,7 +100,7 @@ ifneq ($(LOOP_COMMAND),)
 .PHONY: loop-workspace
 loop-workspace:
 	$(Q)$(LOOP_COMMAND) \
-		SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./ owned
+		SkyLabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./ owned
 
 .PHONY: loop-subrepos
 loop-subrepos: $(patsubst %,%-revloop,${SUBREPO_DIRS})
@@ -111,7 +111,7 @@ loop: loop-workspace $(patsubst %,%-loop,${SUBREPO_DIRS})
 .PHONY: revloop
 revloop: loop-subrepos
 	$(Q)$(LOOP_COMMAND) \
-		SkylabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./ owned
+		SkyLabsAI/workspace ${WORKSPACE_ON_GITHUB} main ./ owned
 endif
 
 .PHONY: clean
