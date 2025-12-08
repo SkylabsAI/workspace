@@ -1,0 +1,69 @@
+[project]
+name = "workspace"
+version = "0.1.0"
+description = "SkyLabs AI Workspace"
+requires-python = "~=3.13.0"
+
+[tool.uv.workspace]
+members = [
+    "fmdeps/skylabs-fm/ocaml-jsonrpc-tp/python",
+    "fmdeps/skylabs-fm/rocq-pipeline",
+    "fmdeps/skylabs-fm/rocq-doc-manager/python",
+    "fmdeps/skylabs-fm/psi-agent",
+    "psi/backend/inference",
+    "psi/backend/prompts",
+    "psi/backend/brick_agents",
+    "psi/backend/preprocessing-tools",
+    "psi/backend/psi_verifier/agentic_loop/common",
+    "psi/backend/psi_verifier/agentic_loop/psi_prover_workflow",
+    "psi/backend/psi_verifier/auth_service",
+    "psi/backend/psi_verifier/brick_sdk",
+    "psi/backend/psi_verifier/chat_service",
+    "psi/backend/psi_verifier/cognition_engine",
+    "psi/backend/psi_verifier/grpc_server",
+    "psi/backend/psi_verifier/observability",
+    "psi/backend/psi_verifier/perturbations",
+    "psi/backend/psi_verifier/utils",
+    "psi/backend/rocq_agent_toolkit/backend",
+    "psi/backend/psi_verifier/ci_example",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+extend-exclude = ["build"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "C4", "UP"]
+ignore = ["E501"] # line too long, handled by formatter
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+disable_error_code = ["import-untyped"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+markers = [
+    "integration: marks tests as integration",
+    "slow: marks tests as slow",
+    "unit: marks tests as unit",
+]
