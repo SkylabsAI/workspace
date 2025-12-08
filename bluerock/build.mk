@@ -8,6 +8,7 @@ ifeq ($(wildcard ${BHV_DIR}),${BHV_DIR})
 	+$(Q)(LLVM=1 BUILD_CACHING=0 SHALLOW=1 \
 		GITLAB_URL=${GITLAB_URL} \
 		uv --directory ${BHV_DIR} run \
+		   --python 3.13 \
 		   --with-requirements python_requirements.txt \
 		   --no-project --isolated -- ./fm-build.py -b)
 else
