@@ -1,0 +1,78 @@
+#!/bin/bash
+set -o errexit
+set -o pipefail
+
+# "dune-named-logfile ARGS ..." invokes "dune ARGS ...", and then copies the
+# resulting dune "_build/log" to the path specified by SL_DUNE_LOG_FILE. If
+# SL_LOG_APPEND is set and non-empty, the log contents is added to the end of
+# the file instead of overwriting it.
+#
+# This script is meant to be put in the PATH under name "dune". This is useful
+# when "dune" invocations cannot easily be replaced by "dune-named-logfile".
+# In this case, the script expects SL_DUNE_ORIGINAL to contains an absolute
+# path to the original "dune" binary.
+#
+# Options (all passed via environment variables):
+# - SL_DUNE_ORIGINAL: absolute path to the original "dune" binary.
+# - SL_DUNE_LOG_FILE: target log file.
+# - SL_DUNE_LOG_APPEND: if non-empty, the log is appended and not overwritten.
+
+SELF=$(realpath $0)
+DUNE=$(realpath "${SL_DUNE_ORIGINAL:=$(which dune)}")
+
+if [ -z "${SL_DUNE_ORIGINAL}" ] && [ "${SELF}" -ef "${DUNE}" ]; then
+  echo "Cannot find original dune binary." >> /dev/stderr
+  echo "Set SL_DUNE_ORIGINAL to the original dune binary path." > /dev/stderr;
+  exit 1;
+fi
+
+if [ -n "${SL_DUNE_ORIGINAL}" ] && [ "${SELF}" -ef "${DUNE}" ]; then
+  echo "SL_DUNE_ORIGINAL must not point to the dune wrapper." > /dev/stderr;
+  exit 1;
+fi
+
+if [ -n "${INSIDE_DUNE}" ]; then
+  echo "The dune wrapper was invoked from dune." > /dev/stderr;
+  exit 1;
+fi
+
+if [ -n "${INSIDE_DUNE_WRAPPER}" ]; then
+  echo "The dune wrapper was invoked from itself." > /dev/stderr;
+  exit 1;
+fi
+
+export INSIDE_DUNE_WRAPPER=1
+
+LOG=${SL_DUNE_LOG_FILE}
+
+if [ -z "${LOG}" ]; then
+  ${DUNE} "$@";
+else
+  DUNE_PATH=$(${DUNE} exec -- env | grep -E '^INSIDE_DUNE=' | cut -d '=' -f 2)
+
+  if [ -z "${DUNE_PATH}" ]; then
+    echo "Could not determine path to the dune workspace" > /dev/stderr;
+    exit 1;
+  fi
+
+  BUILD_PATH=$(realpath "${DUNE_PATH}/..")
+  DUNE_LOG="${BUILD_PATH}/log"
+  rm "${DUNE_LOG}"
+
+  ${DUNE} "$@" && EXIT=$? || EXIT=$?
+
+  if [ -f "${DUNE_LOG}" ]; then
+    if [ -z "${SL_DUNE_LOG_APPEND}" ]; then
+      cp "${DUNE_LOG}" "${LOG}"
+    else
+      cat "${DUNE_LOG}" >> "${LOG}"
+    fi
+  else
+    if [ -z "${SL_DUNE_LOG_APPEND}" ]; then
+      touch "${LOG}"
+    else
+      truncate --size=0 "${LOG}"
+    fi
+  fi
+  exit ${EXIT}
+fi

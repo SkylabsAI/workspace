@@ -1,0 +1,13 @@
+(lang dune 3.17)
+(name dune-named-logfile)
+(generate_opam_files true)
+
+(maintainers "Jan-Oliver Kaiser <janno@skylabs-ai.com>")
+
+(authors "Jan-Oliver Kaiser <janno@skylabs-ai.com>")
+
+(source (github SkylabsAI/workspace))
+
+(package
+ (name dune-named-logfile)
+ (synopsis "A dune wrapper to collect logs"))
