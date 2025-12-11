@@ -62,8 +62,16 @@ define common_target
 $1: $(patsubst %,%-$1,${SUBREPO_DIRS})
 endef
 
-COMMON_TARGETS = clone lightweight-clone nuke peek
+COMMON_TARGETS = clone lightweight-clone nuke
 $(foreach t,$(COMMON_TARGETS),$(eval $(call common_target,$(t))))
+
+.PHONY: workspace-peek
+workspace-peek:
+	@echo "Peeking into ./"
+	@git status --short --branch --untracked-files=normal
+
+.PHONY: peek
+peek: workspace-peek $(patsubst %,%-peek,${SUBREPO_DIRS})
 
 .PHONY: workspace-fetch
 workspace-fetch:
