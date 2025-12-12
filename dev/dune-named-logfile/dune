@@ -1,0 +1,5 @@
+(install
+ (files dune-named-logfile)
+ (section bin)
+ (package dune-named-logfile)
+ )

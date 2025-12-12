@@ -17,7 +17,7 @@ all: _CoqProject stage1
 CPP2V = _build/install/default/bin/cpp2v
 .PHONY: ide-prepare
 ide-prepare: _CoqProject
-	$(Q)dune build --display=short @fmdeps/vendored/rocq/install ${CPP2V}
+	$(Q)dev/dune-named-logfile/dune-named-logfile build --display=short @fmdeps/vendored/rocq/install ${CPP2V}
 
 .PHONY: FORCE
 FORCE:
