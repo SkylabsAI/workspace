@@ -20,7 +20,8 @@ ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
 	@echo "Repo ${REPO_URL} seems already cloned in ${REPO_DIR}."
 else
 	@echo "Cloning ${REPO_URL} in ${REPO_DIR}"
-	$(Q)git clone ${CLONE_ARGS} --branch ${REPO_BRANCH} ${REPO_URL} ${REPO_DIR}
+	$(Q)GIT_LFS_SKIP_SMUDGE=${CI} \
+		git clone ${CLONE_ARGS} --branch ${REPO_BRANCH} ${REPO_URL} ${REPO_DIR}
 endif
 
 PSI_LIGHTWEIGHT_CLONE_TARGETS += psi-${REPO_NAME}-lightweight-clone
@@ -30,7 +31,8 @@ ifeq ($(wildcard ${REPO_DIR}),${REPO_DIR})
 	@echo "Repo ${REPO_URL} seems already cloned in ${REPO_DIR}."
 else
 	@echo "Cloning ${REPO_URL} in ${REPO_DIR} (lightweight, no checkout)"
-	$(Q)git clone --no-checkout --filter=tree:0 --quiet ${REPO_URL} ${REPO_DIR}
+	$(Q)GIT_LFS_SKIP_SMUDGE=${CI} \
+		git clone --no-checkout --filter=tree:0 --quiet ${REPO_URL} ${REPO_DIR}
 endif
 
 PSI_NUKE_TARGETS += psi-${REPO_NAME}-nuke
