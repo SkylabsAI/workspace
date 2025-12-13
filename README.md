@@ -4,14 +4,12 @@ SkyLabs AI Workspace
 This repository provides infrastructure for cloning and working on the various
 SkyLabs AI repositories (public of private), within a single workspace.
 
-This repository also hosts infrastructure for CI and docker images.
-
 Getting Started
 ---------------
 
 This section gives detailed instructions for setting up a local workspace. The
 instructions assume that the workspace is cloned in a directory that will hold
-potentially many copies of the workspace, in the form of `git` work-trees.
+potentially many copies of the workspace, some containing `git` work-trees.
 
 ### Setting Up The Workspace
 
@@ -26,9 +24,11 @@ cd workspace                                      # Move to the workspace.
 
 You can then optionally clone sub-repositories within it.
 ```sh
-make fmdeps-clone -k -j # Cloning (mostly public) FM sub-repos.
-make psi-clone -j       # Cloning (private) psi sub-repos.
-make bluerock-clone -j  # Cloning (private) BlueRock sub-repos, mostly for CI.
+make clone -j          # Cloning everything (including private repos).
+make clone-public -j   # Cloning only the publicly-accessible repos.
+make clone-fmdeps -j   # Cloning (mostly public) repos of fmdeps/.
+make clone-psi -j      # Cloning (private) repos of psi/.
+make clone-bluerock -j # Cloning (private) repos of bluerock/ (used in CI).
 ```
 
 ### Setting Up FM Dependencies
@@ -57,31 +57,40 @@ dune build              # Build for installation.
 Sub-Repository Control
 ----------------------
 
-The following folders gather sub-repositories:
-- `fmdeps` (all the core FM repositories),
-- `psi` (all other SkyLabs AI repositories),
-- `bluerock` (all the BlueRock repositories used by FM CI).
+The configuration for sub-repositories is found in `dev/repos/config.mk`. This
+file controls what repos get clone in the workspace, and where. At the moment,
+repositories are gatherd into the followig directories:
+- `fmdeps/` (all the core FM repositories),
+- `psi/` (all other SkyLabs AI repositories),
+- `bluerock/` (all the BlueRock repositories used by FM CI).
 
-These directories contain a file called `config.mk`, which defines set set of
-repositories to be cloned. Special `Makefile` targets can be used to run batch
-operations on all such repositories. Note that different targets are used for
-different directories, and they are all prefixed by the directory name.
-
-Available `Makefile` targets for the `fmdeps` directory are:
-- `make fmdeps-show-config` shows the configuration for the sub-repositories.
-- `make fmdeps-clone` initializes all the sub-repositories.
-- `make fmdeps-fetch` runs `git fetch --all` in all the sub-repositories.
-- `make fmdeps-pull` runs `git pull --rebase` in all the sub-repositories.
-- `make fmdeps-peek` runs `git status` in all the sub-repositories.
-- `make fmdeps-describe` shows the commit hash of each sub-repositories.
+Custom `Makefile` targets are provided to run batch operations on repositories
+of the workspace, either all of them, or a group of them (corresponding to the
+directories listed above, and also to special groups like `upstream`, `owned`,
+`dowstream`, `public`, or `private`). Here is a list of often useful targets:
+- `make show-config` shows the configuration for the sub-repositories.
+- `make clone` initializes all the sub-repositories.
+- `make fetch` runs `git fetch --all` in all the sub-repositories.
+- `make pull` runs `git pull --rebase` in all the sub-repositories.
+- `make peek` runs `git status` in all the sub-repositories.
+- `make describe` shows the commit hash of each sub-repositories.
 
 There are more, but these can be dangerous:
-- `make fmdeps-gitclean` runs `git clean -xfd` in all the sub-repositories.
-- `make fmdeps-checkout-main` resets all the repositories to our main branch.
+- `make gitclean` runs `git clean -xfd` in all the sub-repositories.
+- `make checkout-main` resets all the repositories to our main branch.
+- `make nuke` deletes all the sub-repositories.
 
-Similar targets are available for other sub-repository directories.
+Similar targets are available for groups of repos. For example:
+- `make clone-fmdeps` only clones the sub-repos of the `fmdeps/` directory.
+- `make peek-psi` runs `git status` in sub-repos of the `psi/` directory.
+- `make nuke-bluerock` deletes all sub-repositories in `bluerock/`.
+- `make peek-public` runs `git status` in all the public repos.
+
+Targets are also provided per-repo. For example:
+- `make clone-BRiCk` only clones `BRiCk` in `fmdeps/BRiCk`.
+- `make nuke-bhv` deletes the sub-repo in `bluerock/bhv`.
 
 Worktree Support
----------------------
+----------------
 
-For worktree support, consult [./dev/worktrees/README-worktree.md](./dev/worktrees/README-worktree.md).
+See [here](./dev/worktrees/README-worktree.md) for worktree support.
