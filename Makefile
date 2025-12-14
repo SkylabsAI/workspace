@@ -41,10 +41,6 @@ include dev/repos/rules.mk
 # AST generation of BlueRock repos.
 include bluerock/build.mk
 
-# Backward-compat targets.
-.PHONY: bluerock-nuke
-bluerock-nuke: nuke-bluerock
-
 .PHONY: clean
 clean:
 	$(Q)rm -rf $(GENERATED_FILES)
