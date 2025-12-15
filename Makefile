@@ -32,9 +32,6 @@ update-br-fm-deps:
 # Include the rules for development tools (deps checking, ...)
 include dev/rules.mk
 
-# Include the rules for building docker images.
-include docker/rules.mk
-
 # Include the rules for managing the workspace and sub-repositories.
 include dev/repos/rules.mk
 
