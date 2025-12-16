@@ -22,13 +22,6 @@ _CoqProject: fmdeps/BRiCk/scripts/coq_project_gen/gen-_CoqProject-dune.sh FORCE
 .PHONY: stage1
 stage1: ide-prepare ast-prepare-bluerock
 
-# Updating the OCaml / Coq FM dependencies.
-update-br-fm-deps:
-	$(Q)opam update
-	$(Q)opam repo add --this-switch archive \
-	  git+https://github.com/ocaml/opam-repository-archive
-	$(Q)opam install fmdeps/fm-ci/fm-deps/br-fm-deps.opam
-
 # Include the rules for development tools (deps checking, ...)
 include dev/rules.mk
 

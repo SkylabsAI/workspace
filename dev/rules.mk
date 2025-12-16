@@ -28,3 +28,10 @@ dev-setup: dev-check-ver dev-setup-opam
 .PHONY: dev-setup-opam
 dev-setup-opam: dev/setup/opam.sh dev-check-ver-opam
 	$(Q)./$<
+
+# Updating the OCaml / Rocq dependencies.
+update-opam-deps:
+	$(Q)opam update
+	$(Q)opam repo add --this-switch archive \
+	  git+https://github.com/ocaml/opam-repository-archive
+	$(Q)opam install dev/opam-deps/skylabs-deps.opam

@@ -34,9 +34,9 @@ make clone-bluerock -j # Cloning (private) repos of bluerock/ (used in CI).
 ### Setting Up FM Dependencies
 
 ```sh
-make dev-check-ver      # Check system deps.
-make dev-setup          # Setup the dev environment (opam switch, ...).
-make update-br-fm-deps  # Install necessary dependencies.
+make dev-check-ver    # Check system deps.
+make dev-setup        # Setup the dev environment (opam switch, ...).
+make update-opam-deps # Install necessary dependencies.
 ```
 
 Note that you might need to run either of the following commands to enable the
