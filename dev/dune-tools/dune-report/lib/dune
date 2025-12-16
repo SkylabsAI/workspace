@@ -1,0 +1,6 @@
+(library
+ (name dune_log)
+ (public_name dune-report)
+ (wrapped false)
+ (preprocess (pps ppx_deriving_yojson))
+ (libraries ppx_deriving_yojson.runtime))

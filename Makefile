@@ -4,6 +4,8 @@ Q=@
 # Pick default bash on MacOS, even if it's installed with Homebrew.
 SHELL := $(shell which bash)
 
+DUNE_WRAPPER := dev/dune-tools/dune-named-logfile/dune-named-logfile
+
 .PHONY: all
 all: _CoqProject stage1
 	$(Q)dune build --display=short
@@ -11,7 +13,7 @@ all: _CoqProject stage1
 CPP2V = _build/install/default/bin/cpp2v
 .PHONY: ide-prepare
 ide-prepare: _CoqProject
-	$(Q)dune build --display=short @fmdeps/vendored/rocq/install ${CPP2V}
+	$(Q)$(DUNE_WRAPPER) build --display=short @fmdeps/vendored/rocq/install ${CPP2V}
 
 .PHONY: FORCE
 FORCE:

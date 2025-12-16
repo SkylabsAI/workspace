@@ -1,0 +1,5 @@
+(executable
+ (name main)
+ (public_name dune-report)
+ (package dune-report)
+ (libraries dune_log cmdliner))

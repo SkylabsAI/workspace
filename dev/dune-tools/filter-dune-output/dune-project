@@ -1,0 +1,14 @@
+(lang dune 3.17)
+(name filter-dune-output)
+(generate_opam_files true)
+
+(source (github SkylabsAI/workspace))
+(authors "Rodolphe Lepigre <rodolphe.lepigre@skylabs-ai.com>")
+(maintainers "Rodolphe Lepigre <rodolphe.lepigre@skylabs-ai.com>")
+(license LGPL-2.0-or-later)
+
+(package
+ (name filter-dune-output)
+ (synopsis "Library for interpreting failures from the dune log"))
+
+(subst disabled)
