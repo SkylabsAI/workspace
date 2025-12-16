@@ -296,8 +296,8 @@ requires-dist = [
     { name = "jsonschema", specifier = ">=4.25.1" },
     { name = "observability", editable = "psi/backend/psi_verifier/observability" },
     { name = "prompts", editable = "psi/backend/prompts" },
-    { name = "rocq-doc-manager", editable = "fmdeps/skylabs-fm/rocq-doc-manager/python" },
-    { name = "rocq-pipeline", editable = "fmdeps/skylabs-fm/rocq-pipeline" },
+    { name = "rocq-doc-manager", editable = "fmdeps/rocq-agent-toolkit/rocq-doc-manager/python" },
+    { name = "rocq-pipeline", editable = "fmdeps/rocq-agent-toolkit/rocq-pipeline" },
 ]
 
 [package.metadata.requires-dev]
@@ -1108,7 +1108,7 @@ wheels = [
 [[package]]
 name = "jsonrpc-tp"
 version = "0.0.1"
-source = { editable = "fmdeps/skylabs-fm/ocaml-jsonrpc-tp/python" }
+source = { editable = "fmdeps/rocq-agent-toolkit/ocaml-jsonrpc-tp/python" }
 
 [package.dev-dependencies]
 dev = [
@@ -2603,7 +2603,7 @@ dev = [
 [[package]]
 name = "rocq-doc-manager"
 version = "0.0.1"
-source = { editable = "fmdeps/skylabs-fm/rocq-doc-manager/python" }
+source = { editable = "fmdeps/rocq-agent-toolkit/rocq-doc-manager/python" }
 dependencies = [
     { name = "dataclasses-json" },
     { name = "hypothesis" },
@@ -2625,7 +2625,7 @@ dev = [
 requires-dist = [
     { name = "dataclasses-json", specifier = ">=0.6.7" },
     { name = "hypothesis", specifier = ">=6.148.2" },
-    { name = "jsonrpc-tp", editable = "fmdeps/skylabs-fm/ocaml-jsonrpc-tp/python" },
+    { name = "jsonrpc-tp", editable = "fmdeps/rocq-agent-toolkit/ocaml-jsonrpc-tp/python" },
     { name = "pyyaml", specifier = ">=6.0.3,<7" },
 ]
 
@@ -2642,7 +2642,7 @@ dev = [
 [[package]]
 name = "rocq-pipeline"
 version = "0.1.0"
-source = { editable = "fmdeps/skylabs-fm/rocq-pipeline" }
+source = { editable = "fmdeps/rocq-agent-toolkit/rocq-pipeline" }
 dependencies = [
     { name = "dotenv" },
     { name = "httpx" },
@@ -2677,7 +2677,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.3,<7" },
     { name = "rich", specifier = ">=14.2.0" },
     { name = "rich-progress", specifier = ">=0.4.0" },
-    { name = "rocq-doc-manager", editable = "fmdeps/skylabs-fm/rocq-doc-manager/python" },
+    { name = "rocq-doc-manager", editable = "fmdeps/rocq-agent-toolkit/rocq-doc-manager/python" },
 ]
 
 [package.metadata.requires-dev]

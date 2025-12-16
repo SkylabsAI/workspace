@@ -29,6 +29,7 @@ REPOS += fmdeps:SkyLabsAI/auto:main:auto/:owned:private
 REPOS += fmdeps:SkyLabsAI/brick-libcpp:main:brick-libcpp/:owned:public
 REPOS += fmdeps:SkyLabsAI/fm-tools:main:fm-tools/:owned:private
 REPOS += fmdeps:SkyLabsAI/skylabs-fm:main:skylabs-fm/:owned:private
+REPOS += fmdeps:SkyLabsAI/rocq-agent-toolkit:main:rocq-agent-toolkit/:owned:private
 
 # Infrastructure / CI repositories.
 REPOS += fmdeps:SkyLabsAI/fm-ci:main:fm-ci/:owned:public
