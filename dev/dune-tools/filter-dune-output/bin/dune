@@ -1,0 +1,4 @@
+(executable
+ (name main)
+ (public_name filter-dune-output)
+ (package filter-dune-output))
