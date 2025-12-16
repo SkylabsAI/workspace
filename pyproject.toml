@@ -6,10 +6,10 @@ requires-python = "~=3.13.0"
 
 [tool.uv.workspace]
 members = [
-    "fmdeps/skylabs-fm/ocaml-jsonrpc-tp/python",
-    "fmdeps/skylabs-fm/rocq-pipeline",
-    "fmdeps/skylabs-fm/rocq-doc-manager/python",
-    "fmdeps/skylabs-fm/psi-agent",
+    "fmdeps/rocq-agent-toolkit/ocaml-jsonrpc-tp/python",
+    "fmdeps/rocq-agent-toolkit/rocq-pipeline",
+    "fmdeps/rocq-agent-toolkit/rocq-doc-manager/python",
+    "fmdeps/rocq-agent-toolkit/psi-agent",
     "psi/backend/inference",
     "psi/backend/prompts",
     "psi/backend/brick_agents",
