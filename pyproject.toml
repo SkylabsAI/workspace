@@ -10,6 +10,8 @@ members = [
     "fmdeps/rocq-agent-toolkit/rocq-pipeline",
     "fmdeps/rocq-agent-toolkit/rocq-doc-manager/python",
     "fmdeps/rocq-agent-toolkit/psi-agent",
+    "fmdeps/rocq-agent-toolkit/observability",
+    "fmdeps/rocq-agent-toolkit/dashboard/backend",
     "psi/backend/inference",
     "psi/backend/prompts",
     "psi/backend/brick_agents",
@@ -21,10 +23,8 @@ members = [
     "psi/backend/psi_verifier/chat_service",
     "psi/backend/psi_verifier/cognition_engine",
     "psi/backend/psi_verifier/grpc_server",
-    "psi/backend/psi_verifier/observability",
     "psi/backend/psi_verifier/perturbations",
     "psi/backend/psi_verifier/utils",
-    "psi/backend/rocq_agent_toolkit/backend",
     "psi/backend/psi_verifier/ci_example",
 ]
 

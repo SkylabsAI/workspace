@@ -200,7 +200,7 @@ dev = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.111.0,<0.117.0" },
     { name = "httpx", specifier = ">=0.27.0,<0.29.0" },
-    { name = "observability", editable = "psi/backend/psi_verifier/observability" },
+    { name = "observability", editable = "fmdeps/rocq-agent-toolkit/observability" },
     { name = "uvicorn", specifier = ">=0.29.0,<0.36.0" },
 ]
 
@@ -294,7 +294,7 @@ requires-dist = [
     { name = "cognition-engine", editable = "psi/backend/psi_verifier/cognition_engine" },
     { name = "inference", editable = "psi/backend/inference" },
     { name = "jsonschema", specifier = ">=4.25.1" },
-    { name = "observability", editable = "psi/backend/psi_verifier/observability" },
+    { name = "observability", editable = "fmdeps/rocq-agent-toolkit/observability" },
     { name = "prompts", editable = "psi/backend/prompts" },
     { name = "rocq-doc-manager", editable = "fmdeps/rocq-agent-toolkit/rocq-doc-manager/python" },
     { name = "rocq-pipeline", editable = "fmdeps/rocq-agent-toolkit/rocq-pipeline" },
@@ -416,7 +416,7 @@ dev = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.111.0,<0.117.0" },
     { name = "httpx", specifier = ">=0.27.0,<0.29.0" },
-    { name = "observability", editable = "psi/backend/psi_verifier/observability" },
+    { name = "observability", editable = "fmdeps/rocq-agent-toolkit/observability" },
     { name = "prompts", editable = "psi/backend/prompts" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.29.0,<0.36.0" },
@@ -501,7 +501,7 @@ requires-dist = [
     { name = "jsonschema", specifier = ">=4.25.1" },
     { name = "jsonschema", marker = "extra == 'all'", specifier = ">=4.17.0,<5" },
     { name = "jsonschema", marker = "extra == 'validation'", specifier = ">=4.17.0,<5" },
-    { name = "observability", editable = "psi/backend/psi_verifier/observability" },
+    { name = "observability", editable = "fmdeps/rocq-agent-toolkit/observability" },
     { name = "psi-utils", editable = "psi/backend/psi_verifier/utils" },
     { name = "pydantic", marker = "extra == 'all'", specifier = ">=2.0.0,<3" },
     { name = "pydantic", marker = "extra == 'validation'", specifier = ">=2.0.0,<3" },
@@ -826,7 +826,7 @@ requires-dist = [
     { name = "langchain-ollama", specifier = "==0.2.2" },
     { name = "langchain-openai", specifier = "==0.3.0" },
     { name = "langgraph", specifier = ">=0.2.62,<0.3" },
-    { name = "observability", editable = "psi/backend/psi_verifier/observability" },
+    { name = "observability", editable = "fmdeps/rocq-agent-toolkit/observability" },
     { name = "prompts", editable = "psi/backend/prompts" },
     { name = "psi-prover-workflow", editable = "psi/backend/psi_verifier/agentic_loop/psi_prover_workflow" },
     { name = "psi-utils", editable = "psi/backend/psi_verifier/utils" },
@@ -1585,7 +1585,7 @@ wheels = [
 [[package]]
 name = "observability"
 version = "0.1.0"
-source = { editable = "psi/backend/psi_verifier/observability" }
+source = { editable = "fmdeps/rocq-agent-toolkit/observability" }
 dependencies = [
     { name = "click" },
     { name = "opentelemetry-api" },
@@ -2173,7 +2173,7 @@ requires-dist = [
     { name = "brick-sdk", editable = "psi/backend/psi_verifier/brick_sdk" },
     { name = "cognition-engine", editable = "psi/backend/psi_verifier/cognition_engine" },
     { name = "inference", editable = "psi/backend/inference" },
-    { name = "observability", editable = "psi/backend/psi_verifier/observability" },
+    { name = "observability", editable = "fmdeps/rocq-agent-toolkit/observability" },
     { name = "prompts", editable = "psi/backend/prompts" },
     { name = "psi-utils", editable = "psi/backend/psi_verifier/utils" },
 ]
@@ -2554,7 +2554,7 @@ wheels = [
 [[package]]
 name = "rocq-agent-toolkit-backend"
 version = "0.1.0"
-source = { editable = "psi/backend/rocq_agent_toolkit/backend" }
+source = { editable = "fmdeps/rocq-agent-toolkit/dashboard/backend" }
 dependencies = [
     { name = "asyncpg" },
     { name = "boto3" },
@@ -2673,7 +2673,7 @@ requires-dist = [
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "httpx", specifier = ">=0.27.0,<0.29.0" },
     { name = "jmespath", specifier = ">=1.0.1,<2" },
-    { name = "observability", editable = "psi/backend/psi_verifier/observability" },
+    { name = "observability", editable = "fmdeps/rocq-agent-toolkit/observability" },
     { name = "pyyaml", specifier = ">=6.0.3,<7" },
     { name = "rich", specifier = ">=14.2.0" },
     { name = "rich-progress", specifier = ">=0.4.0" },
