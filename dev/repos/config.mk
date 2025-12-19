@@ -36,16 +36,16 @@ REPOS += fmdeps:SkyLabsAI/fm-ci:main:fm-ci/:owned:public
 REPOS += fmdeps:SkyLabsAI/ci:main:ci/:owned:private
 
 # Vendored repositories.
-REPOS += fmdeps:SkyLabsAI/elpi:skylabs-master:vendored/elpi/:upstream:public
-REPOS += fmdeps:SkyLabsAI/rocq-elpi:skylabs-master:vendored/rocq-elpi/:upstream:public
-REPOS += fmdeps:SkyLabsAI/rocq-equations:skylabs-main:vendored/rocq-equations/:upstream:public
-REPOS += fmdeps:SkyLabsAI/rocq-ext-lib:skylabs-master:vendored/rocq-ext-lib/:upstream:public
-REPOS += fmdeps:SkyLabsAI/rocq-iris:skylabs-master:vendored/rocq-iris/:upstream:public
-REPOS += fmdeps:SkyLabsAI/rocq-lsp:skylabs-main:vendored/rocq-lsp/:upstream:public
-REPOS += fmdeps:SkyLabsAI/rocq-stdlib:skylabs-master:vendored/rocq-stdlib/:upstream:public
-REPOS += fmdeps:SkyLabsAI/rocq-stdpp:skylabs-master:vendored/rocq-stdpp/:upstream:public
-REPOS += fmdeps:SkyLabsAI/rocq:skylabs-master:vendored/rocq/:upstream:public
-REPOS += fmdeps:SkyLabsAI/vsrocq:skylabs-main:vendored/vsrocq/:upstream:public
+REPOS += vendored:SkyLabsAI/elpi:skylabs-master:elpi/:upstream:public
+REPOS += vendored:SkyLabsAI/rocq-elpi:skylabs-master:rocq-elpi/:upstream:public
+REPOS += vendored:SkyLabsAI/rocq-equations:skylabs-main:rocq-equations/:upstream:public
+REPOS += vendored:SkyLabsAI/rocq-ext-lib:skylabs-master:rocq-ext-lib/:upstream:public
+REPOS += vendored:SkyLabsAI/rocq-iris:skylabs-master:rocq-iris/:upstream:public
+REPOS += vendored:SkyLabsAI/rocq-lsp:skylabs-main:rocq-lsp/:upstream:public
+REPOS += vendored:SkyLabsAI/rocq-stdlib:skylabs-master:rocq-stdlib/:upstream:public
+REPOS += vendored:SkyLabsAI/rocq-stdpp:skylabs-master:rocq-stdpp/:upstream:public
+REPOS += vendored:SkyLabsAI/rocq:skylabs-master:rocq/:upstream:public
+REPOS += vendored:SkyLabsAI/vsrocq:skylabs-main:vsrocq/:upstream:public
 
 # BlueRock repositories.
 REPOS += bluerock:SkyLabsAI/bluerock.NOVA:skylabs-proof:NOVA/:downstream:private
