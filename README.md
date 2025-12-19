@@ -2,7 +2,26 @@ SkyLabs AI Workspace
 ====================
 
 This repository provides infrastructure for cloning and working on the various
-SkyLabs AI repositories (public of private), within a single workspace.
+SkyLabs AI repositories (public & private), within a single workspace. The
+core subdirectory structure is:
+```text
+.                           # Top level (pseudo) monorepo
+├─ bluerock/                # - BlueRock code & proofs
+│  ├─ bhv/                  #   - BlueRock Hypervisor
+│  └─ NOVA/                 #   - NOVA Microhypervisor
+├─ fmdeps/                  # - SkyLabs FM toolchain
+│  ├─ vendored/             #   - Deps: 3rd party dependencies
+│  ├─ ...                   #   - ...
+│  ├─ BRiCk/                #   - Core: program logic for C++ verification
+│  ├─ auto/                 #   - Core (private): proof automation for BRiCk
+│  ├─ rocq-agent-toolkit/   #   - Ext: OCaml+Rocq / Python tooling
+│  └─ skylabs-fm/           #   - Ext (Private): OCaml+Rocq / Python tooling
+└─ psi/                     # - SkyLabs Product
+   ├─ backend/              #   - Core: agents, prompts, tooling, etc...
+   ├─ data/                 #   - Datasets & Results
+   ├─ ide/                  #   - VsCode Extension
+   └─ protos/               #   - GRPC protos connecting backend+ide
+```
 
 Getting Started
 ---------------
