@@ -12,7 +12,7 @@
 # path match the associated regular expression. Note that groups should not
 # intersect.
 [ci-groups]
-vendored = "fmdeps/vendored/*"
+vendored = "vendored/*"
 bluerock = "bluerock/*"
 psi = "psi/*"
 

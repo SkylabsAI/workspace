@@ -26,6 +26,7 @@ You can then optionally clone sub-repositories within it.
 ```sh
 make clone -j          # Cloning everything (including private repos).
 make clone-public -j   # Cloning only the publicly-accessible repos.
+make clone-vendored -j # Cloning only the (public) vendored repositories.
 make clone-fmdeps -j   # Cloning (mostly public) repos of fmdeps/.
 make clone-psi -j      # Cloning (private) repos of psi/.
 make clone-bluerock -j # Cloning (private) repos of bluerock/ (used in CI).
