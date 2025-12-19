@@ -2,7 +2,7 @@ SkyLabs AI Workspace
 ====================
 
 This repository provides infrastructure for cloning and working on the various
-SkyLabs AI repositories (public of private), within a single workspace.
+SkyLabs AI repositories (public & private), within a single workspace.
 
 Getting Started
 ---------------
