@@ -26,6 +26,7 @@ members = [
     "psi/backend/psi_verifier/perturbations",
     "psi/backend/psi_verifier/utils",
     "psi/backend/psi_verifier/ci_example",
+    "psi/backend/psi_coder/backend/llm_gateway"
 ]
 
 [tool.ruff]
