@@ -2622,6 +2622,7 @@ dependencies = [
 dev = [
     { name = "mypy" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
     { name = "ruff" },
     { name = "taskipy" },
 ]
@@ -2645,6 +2646,7 @@ requires-dist = [
 dev = [
     { name = "mypy", specifier = ">=1.18.2,<2" },
     { name = "pytest", specifier = ">=8.4.2" },
+    { name = "pytest-asyncio", specifier = ">=0.24.0" },
     { name = "ruff", specifier = ">=0.14.2" },
     { name = "taskipy", specifier = ">=1.14.1" },
 ]
