@@ -18,6 +18,7 @@ members = [
     "perturbations",
     "preprocessing-tools",
     "prompts",
+    "provenance-toolkit",
     "psi-prover-workflow",
     "psi-utils",
     "rocq-agent-toolkit-backend",
@@ -2147,6 +2148,41 @@ wheels = [
 ]
 
 [[package]]
+name = "provenance-toolkit"
+version = "0.1.0"
+source = { editable = "fmdeps/rocq-agent-toolkit/provenance-toolkit" }
+dependencies = [
+    { name = "semver" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "black" },
+    { name = "flake8" },
+    { name = "isort" },
+    { name = "mypy" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "ruff" },
+    { name = "taskipy" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "semver", specifier = ">=3.0.4" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "black", specifier = ">=23.7.0,<24" },
+    { name = "flake8", specifier = ">=6.0.0,<7" },
+    { name = "isort", specifier = ">=5.12.0,<6" },
+    { name = "mypy", specifier = ">=1.18.2,<2" },
+    { name = "pyright", specifier = ">=1.1.407" },
+    { name = "pytest", specifier = ">=8.4.2,<9" },
+    { name = "ruff", specifier = ">=0.14.4" },
+    { name = "taskipy", specifier = ">=1.14.1" },
+]
+
+[[package]]
 name = "psi-prover-workflow"
 version = "0.1.0"
 source = { editable = "psi/backend/psi_verifier/agentic_loop/psi_prover_workflow" }
@@ -2358,6 +2394,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e7/46/bd74733ff231675599650d3e47f361794b22ef3e3770998dda30d3b63726/pyjwt-2.10.1.tar.gz", hash = "sha256:3cc5772eb20009233caf06e9d8a0577824723b44e6648ee0a2aedb6cf9381953", size = 87785, upload-time = "2024-11-28T03:43:29.933Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/61/ad/689f02752eeec26aed679477e80e632ef1b682313be70793d798c1d5fc8f/PyJWT-2.10.1-py3-none-any.whl", hash = "sha256:dcdd193e30abefd5debf142f9adfcdd2b58004e644f25406ffaebd50bd98dacb", size = 22997, upload-time = "2024-11-28T03:43:27.893Z" },
+]
+
+[[package]]
+name = "pyright"
+version = "1.1.407"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "nodeenv" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a6/1b/0aa08ee42948b61745ac5b5b5ccaec4669e8884b53d31c8ec20b2fcd6b6f/pyright-1.1.407.tar.gz", hash = "sha256:099674dba5c10489832d4a4b2d302636152a9a42d317986c38474c76fe562262", size = 4122872, upload-time = "2025-10-24T23:17:15.145Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/dc/93/b69052907d032b00c40cb656d21438ec00b3a471733de137a3f65a49a0a0/pyright-1.1.407-py3-none-any.whl", hash = "sha256:6dd419f54fcc13f03b52285796d65e639786373f433e243f8b94cf93a7444d21", size = 5997008, upload-time = "2025-10-24T23:17:13.159Z" },
 ]
 
 [[package]]
@@ -2573,6 +2622,7 @@ dependencies = [
 dev = [
     { name = "mypy" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
     { name = "ruff" },
     { name = "taskipy" },
 ]
@@ -2596,6 +2646,7 @@ requires-dist = [
 dev = [
     { name = "mypy", specifier = ">=1.18.2,<2" },
     { name = "pytest", specifier = ">=8.4.2" },
+    { name = "pytest-asyncio", specifier = ">=0.24.0" },
     { name = "ruff", specifier = ">=0.14.2" },
     { name = "taskipy", specifier = ">=1.14.1" },
 ]
@@ -2648,6 +2699,7 @@ dependencies = [
     { name = "httpx" },
     { name = "jmespath" },
     { name = "observability" },
+    { name = "provenance-toolkit" },
     { name = "pyyaml" },
     { name = "rich" },
     { name = "rich-progress" },
@@ -2674,6 +2726,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.27.0,<0.29.0" },
     { name = "jmespath", specifier = ">=1.0.1,<2" },
     { name = "observability", editable = "fmdeps/rocq-agent-toolkit/observability" },
+    { name = "provenance-toolkit", editable = "fmdeps/rocq-agent-toolkit/provenance-toolkit" },
     { name = "pyyaml", specifier = ">=6.0.3,<7" },
     { name = "rich", specifier = ">=14.2.0" },
     { name = "rich-progress", specifier = ">=0.4.0" },
@@ -2767,6 +2820,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/05/04/74127fc843314818edfa81b5540e26dd537353b123a4edc563109d8f17dd/s3transfer-0.16.0.tar.gz", hash = "sha256:8e990f13268025792229cd52fa10cb7163744bf56e719e0b9cb925ab79abf920", size = 153827, upload-time = "2025-12-01T02:30:59.114Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/fc/51/727abb13f44c1fcf6d145979e1535a35794db0f6e450a0cb46aa24732fe2/s3transfer-0.16.0-py3-none-any.whl", hash = "sha256:18e25d66fed509e3868dc1572b3f427ff947dd2c56f844a5bf09481ad3f3b2fe", size = 86830, upload-time = "2025-12-01T02:30:57.729Z" },
+]
+
+[[package]]
+name = "semver"
+version = "3.0.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/72/d1/d3159231aec234a59dd7d601e9dd9fe96f3afff15efd33c1070019b26132/semver-3.0.4.tar.gz", hash = "sha256:afc7d8c584a5ed0a11033af086e8af226a9c0b206f313e0301f8dd7b6b589602", size = 269730, upload-time = "2025-01-24T13:19:27.617Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a6/24/4d91e05817e92e3a61c8a21e08fd0f390f5301f1c448b137c57c4bc6e543/semver-3.0.4-py3-none-any.whl", hash = "sha256:9c824d87ba7f7ab4a1890799cec8596f15c1241cb473404ea1cb0c55e4b04746", size = 17912, upload-time = "2025-01-24T13:19:24.949Z" },
 ]
 
 [[package]]
